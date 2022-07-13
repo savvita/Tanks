@@ -63,9 +63,19 @@ namespace Client.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap Fire {
+        internal static System.Drawing.Bitmap Bang {
             get {
-                object obj = ResourceManager.GetObject("Fire", resourceCulture);
+                object obj = ResourceManager.GetObject("Bang", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap DeadTankSprite {
+            get {
+                object obj = ResourceManager.GetObject("DeadTankSprite", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }

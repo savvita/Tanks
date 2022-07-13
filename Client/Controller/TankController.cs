@@ -18,19 +18,12 @@ namespace Client.Controller
         /// </summary>
         public SpriteImageModel SpriteImage { get; protected set; }
 
-        /// <summary>
-        /// Bounds of the tank
-        /// </summary>
-        public Rectangle TankRectangle
-        {
-            get => new Rectangle(Tank.Location, Tank.Size);
-        }
 
-        public Rectangle TankImageBounds { get; private set; }
 
         public TankController(SpriteImageModel spriteImage)
         {
             Tank = new TankModel();
+            Tank.Bullet = new BulletModel();
 
             SpriteImage = spriteImage;
 
@@ -39,20 +32,26 @@ namespace Client.Controller
 
             Tank.Size = new Size(SpriteImage.MovingRightImageBounds.Width / 4, SpriteImage.MovingRightImageBounds.Height / 4);
 
-            TankImageBounds = SpriteImage.MovingRightImageBounds.Rectangle;
+            Tank.TankImageBounds = SpriteImage.MovingRightImageBounds.Rectangle;
             currentMove = MoveRight;
+
+            Tank.Muzzle = new Point(Tank.Location.X + Tank.Size.Width, Tank.Location.Y + Tank.Size.Height / 2);
+
+            Tank.Bullet.Location = Tank.Muzzle;
+
         }
 
         private Func<Rectangle> currentMove;
 
         public void Fire()
         {
-            if(Tank.IsFire)
+            if(Tank.IsFire || !Tank.IsAlive)
             {
                 return;
             }
 
             Tank.IsFire = true;
+            Tank.Bullet.IsFlying = true;
 
             if(currentMove == MoveRight)
             {
@@ -60,6 +59,11 @@ namespace Client.Controller
                 {
                     while (FieldBounds.Contains(Tank.Bullet.Location))
                     {
+                        if(!Tank.Bullet.IsFlying)
+                        {
+                            break;
+                        }
+
                         Tank.Bullet.MoveRight();
                         Thread.Sleep(100);
                     }
@@ -74,6 +78,11 @@ namespace Client.Controller
                 {
                     while (FieldBounds.Contains(Tank.Bullet.Location))
                     {
+                        if (!Tank.Bullet.IsFlying)
+                        {
+                            break;
+                        }
+
                         Tank.Bullet.MoveLeft();
                         Thread.Sleep(500);
                     }
@@ -88,6 +97,11 @@ namespace Client.Controller
                 {
                     while (FieldBounds.Contains(Tank.Bullet.Location))
                     {
+                        if (!Tank.Bullet.IsFlying)
+                        {
+                            break;
+                        }
+
                         Tank.Bullet.MoveUp();
                         Thread.Sleep(500);
                     }
@@ -102,8 +116,13 @@ namespace Client.Controller
                 {
                     while (FieldBounds.Contains(Tank.Bullet.Location))
                     {
+                        if (!Tank.Bullet.IsFlying)
+                        {
+                            break;
+                        }
+
                         Tank.Bullet.MoveDown();
-                        Thread.Sleep(500);
+                        Thread.Sleep(200);
                     }
 
                     Tank.IsFire = false;
@@ -114,6 +133,11 @@ namespace Client.Controller
 
         public Rectangle MoveLeft()
         {
+            if(!Tank.IsAlive)
+            {
+                return Tank.TankRectangle;
+            }
+
             if (Tank.Location.X - Tank.Speed >= FieldBounds.Location.X)
             {
                 Tank.Location = new Point(Tank.Location.X - Tank.Speed, Tank.Location.Y);
@@ -127,7 +151,7 @@ namespace Client.Controller
 
             Rectangle rect = SpriteImage.MovingLeftImageBounds.Rectangle;
 
-            TankImageBounds = rect;
+            Tank.TankImageBounds = rect;
 
             Tank.Muzzle = new Point(Tank.Location.X, Tank.Location.Y + Tank.Size.Height / 2);
 
@@ -143,6 +167,11 @@ namespace Client.Controller
 
         public Rectangle MoveRight()
         {
+            if (!Tank.IsAlive)
+            {
+                return Tank.TankRectangle;
+            }
+
             if (Tank.Location.X + Tank.Speed + Tank.Size.Width <= FieldBounds.Location.X + FieldBounds.Width)
             {
                 Tank.Location = new Point(Tank.Location.X + Tank.Speed, Tank.Location.Y);
@@ -156,7 +185,7 @@ namespace Client.Controller
 
             Rectangle rect = SpriteImage.MovingRightImageBounds.Rectangle;
 
-            TankImageBounds = rect;
+            Tank.TankImageBounds = rect;
 
             Tank.Muzzle = new Point(Tank.Location.X + Tank.Size.Width, Tank.Location.Y + Tank.Size.Height / 2);
 
@@ -172,6 +201,11 @@ namespace Client.Controller
 
         public Rectangle MoveUp()
         {
+            if (!Tank.IsAlive)
+            {
+                return Tank.TankRectangle;
+            }
+
             if (Tank.Location.Y - Tank.Speed >= FieldBounds.Location.Y)
             {
                 Tank.Location = new Point(Tank.Location.X, Tank.Location.Y - Tank.Speed);
@@ -185,7 +219,7 @@ namespace Client.Controller
 
             Rectangle rect = SpriteImage.MovingUpImageBounds.Rectangle;
 
-            TankImageBounds = rect;
+            Tank.TankImageBounds = rect;
 
             Tank.Muzzle = new Point(Tank.Location.X + Tank.Size.Width / 2, Tank.Location.Y);
 
@@ -201,6 +235,11 @@ namespace Client.Controller
 
         public Rectangle MoveDown()
         {
+            if (!Tank.IsAlive)
+            {
+                return Tank.TankRectangle;
+            }
+
             if (Tank.Location.Y + Tank.Speed + Tank.Size.Height <= FieldBounds.Location.Y + FieldBounds.Height)
             {
                 Tank.Location = new Point(Tank.Location.X, Tank.Location.Y + Tank.Speed);
@@ -214,7 +253,7 @@ namespace Client.Controller
 
             Rectangle rect = SpriteImage.MovingDownImageBounds.Rectangle;
 
-            TankImageBounds = rect;
+            Tank.TankImageBounds = rect;
 
             Tank.Muzzle = new Point(Tank.Location.X + Tank.Size.Width / 2, Tank.Location.Y + Tank.Size.Height);
             

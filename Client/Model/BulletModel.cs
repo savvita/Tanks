@@ -8,9 +8,9 @@ namespace Client.Model
 {
     public class BulletModel
     {
-        public Point Location;
+        public Point Location { get; set; }
 
-        public int Speed { get; set; } = 50;
+        public int Speed { get; set; } = 20;
 
         public bool IsFlying { get; set; } = false;
 

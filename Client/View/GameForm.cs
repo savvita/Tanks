@@ -44,9 +44,9 @@ namespace Client.View
             this.tankImage.MakeTransparent(Color.White);
             this.tankImage.MakeTransparent();
 
-            this.fireImage = new Bitmap(Properties.Resources.Fire);
-            this.fireImage.MakeTransparent(Color.White);
-            this.fireImage.MakeTransparent(Color.FromArgb(238, 238, 238));
+            //this.fireImage = new Bitmap(Properties.Resources.Fire);
+            //this.fireImage.MakeTransparent(Color.White);
+            //this.fireImage.MakeTransparent(Color.FromArgb(238, 238, 238));
 
             Thread thread = new Thread(Drawing)
             {
@@ -58,28 +58,109 @@ namespace Client.View
 
         private void Drawing()
         {
+            int fireCount = 0;
+            int fireEnemyCount = 0;
+            int bangCount = 0;
+            int bangEnemyCount = 0;
             while (true)
             {
                 this.graphics.Clear(this.BackColor);
-                this.graphics.DrawImage(controller.TankController.Tank.Image, controller.TankController.TankRectangle, 
-                    controller.TankController.TankImageBounds, GraphicsUnit.Pixel);
 
-                if(controller.Enemy != null)
+                DrawTank(controller.TankController.Tank);
+
+                if (controller.Enemy != null)
                 {
-                    this.graphics.DrawImage(controller.TankController.Tank.Image, new Rectangle(0,0,100,100),
-                    new Rectangle(0,0,200,300), GraphicsUnit.Pixel);
+                    DrawTank(controller.Enemy);
+
+                    if (controller.Enemy.IsFire)
+                    {
+                        if (fireEnemyCount < 3)
+                        {
+                            DrawFire(controller.Enemy, fireEnemyCount);
+                            fireEnemyCount++;
+                        }
+
+                        this.graphics.FillEllipse(Brushes.Green, new Rectangle(controller.Enemy.Bullet.Location, new Size(5, 5)));
+                    }
+                    else
+                    {
+                        fireEnemyCount = 0;
+                    }
+
+                    if (!controller.Enemy.IsAlive)
+                    {
+                        if (bangEnemyCount < 5)
+                        {
+                            DrawBang(controller.Enemy, bangEnemyCount);
+
+                            bangEnemyCount++;
+                        }
+                    }
                 }
 
                 if (controller.TankController.Tank.IsFire)
                 {
+                    if (fireCount < 3)
+                    {
+                        DrawFire(controller.TankController.Tank, fireCount);
+                        fireCount++;
+                    }
+
                     this.graphics.FillEllipse(Brushes.Green, new Rectangle(controller.TankController.Tank.Bullet.Location, new Size(5, 5)));
                 }
+
+                if (!controller.TankController.Tank.IsAlive)
+                {
+                    if (bangCount < 5)
+                    {
+                        DrawBang(controller.TankController.Tank, bangCount);
+                        bangCount++;
+                    }
+                }
+
+
 
                 this.BackgroundImage = bufferedImage;
                 this.Invalidate();
 
                 Thread.Sleep(200);
             }
+        }
+
+        private void DrawFire(TankModel tank, int k)
+        {
+            int width = 10 * (k + 1);
+            int height = 10 * (k + 1);
+
+            Point center = new Point(tank.Muzzle.X - width / 2, tank.Muzzle.Y - height / 2);
+
+            this.graphics.FillEllipse(Brushes.Red, new Rectangle(center, new Size(width, height)));
+        }
+
+        private void DrawTank(TankModel tank)
+        {
+            if (tank.IsAlive)
+            {
+                this.graphics.DrawImage(Properties.Resources.Tank, tank.TankRectangle,
+                    tank.TankImageBounds, GraphicsUnit.Pixel);
+            }
+            else
+            {
+                this.graphics.DrawImage(Properties.Resources.DeadTankSprite, tank.TankRectangle,
+                    tank.TankImageBounds, GraphicsUnit.Pixel);
+            }
+        }
+        private void DrawBang(TankModel tank, int k)
+        {
+            int width = 15 * (k + 1);
+            int height = 15 * (k + 1);
+
+            Point center = new Point(tank.Location.X + tank.TankRectangle.Width / 2 - width / 2,
+                tank.Location.Y + tank.TankRectangle.Height / 2 - height / 2);
+
+            this.graphics.DrawImage(Properties.Resources.Bang,
+                                new Rectangle(center, new Size(width, height)),
+                                new Rectangle(0, 0, 200, 200), GraphicsUnit.Pixel);
         }
 
         private void GameForm_KeyDown(object sender, KeyEventArgs e)
@@ -108,7 +189,7 @@ namespace Client.View
 
         private void GameForm_MouseClick(object sender, MouseEventArgs e)
         {
-            controller.TankController.Fire();
+            //controller.TankController.Fire();
         }
     }
 }

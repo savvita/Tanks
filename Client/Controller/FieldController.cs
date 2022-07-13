@@ -29,6 +29,11 @@ namespace Client.Controller
             Connect();
         }
 
+        public bool IsMovePossible()
+        {
+            return false;
+        }
+
         /// <summary>
         /// Connect to the server
         /// </summary>
@@ -40,17 +45,17 @@ namespace Client.Controller
             {
                 string? msg = JsonSerializer.Serialize<TankModel>(TankController.Tank);
                 client.SendMessage(msg);
-                Thread thread = new Thread(ReceivingMessages)
+                Thread listeningThread = new Thread(ReceivingMessages)
                 {
                     IsBackground = true
                 };
-                thread.Start();
+                listeningThread.Start();
 
-                Thread thread2 = new Thread(SendingMessages)
+                Thread sendingThread = new Thread(SendingMessages)
                 {
                     IsBackground = true
                 };
-                thread2.Start();
+                sendingThread.Start();
             }
         }
 
@@ -62,9 +67,30 @@ namespace Client.Controller
             bool isSuccess;
             do
             {
-                string msg = client.ReceiveMessage(out isSuccess);
+                try
+                {
+                    string msg = client.ReceiveMessage(out isSuccess);
 
-                Enemy = JsonSerializer.Deserialize<TankModel>(msg);
+                    Enemy = JsonSerializer.Deserialize<TankModel>(msg);
+                    
+                    if(Enemy == null)
+                    {
+                        continue;
+                    }
+
+                    if(Enemy.IsFire && TankController.Tank.TankRectangle.Contains(Enemy.Bullet.Location))
+                    {
+                        Enemy.Bullet.IsFlying = false;
+                        TankController.Tank.IsAlive = false;
+                    }
+
+                    if(TankController.Tank.IsFire && Enemy.TankRectangle.Contains(TankController.Tank.Bullet.Location))
+                    {
+                        TankController.Tank.Bullet.IsFlying = false;
+                        Enemy.IsAlive = false;
+                    }
+                }
+                catch { }
 
             } while (true);
         }
