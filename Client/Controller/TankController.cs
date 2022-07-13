@@ -55,80 +55,42 @@ namespace Client.Controller
 
             if (currentMove == MoveRight)
             {
-                Task.Factory.StartNew(() =>
-                {
-                    while (FieldBounds.Contains(Tank.Bullet.Location))
-                    {
-                        if (!Tank.Bullet.IsFlying)
-                        {
-                            break;
-                        }
-
-                        Tank.Bullet.MoveRight();
-                        Thread.Sleep(100);
-                    }
-
-                    Tank.IsFire = false;
-
-                });
+                MoveBullet(Tank.Bullet.MoveRight);
             }
             else if (currentMove == MoveLeft)
             {
-                Task.Factory.StartNew(() =>
-                {
-                    while (FieldBounds.Contains(Tank.Bullet.Location))
-                    {
-                        if (!Tank.Bullet.IsFlying)
-                        {
-                            break;
-                        }
-
-                        Tank.Bullet.MoveLeft();
-                        Thread.Sleep(500);
-                    }
-
-                    Tank.IsFire = false;
-
-                });
+                MoveBullet(Tank.Bullet.MoveLeft);
             }
             else if (currentMove == MoveUp)
             {
-                Task.Factory.StartNew(() =>
-                {
-                    while (FieldBounds.Contains(Tank.Bullet.Location))
-                    {
-                        if (!Tank.Bullet.IsFlying)
-                        {
-                            break;
-                        }
-
-                        Tank.Bullet.MoveUp();
-                        Thread.Sleep(500);
-                    }
-
-                    Tank.IsFire = false;
-
-                });
+                MoveBullet(Tank.Bullet.MoveUp);
             }
             else if (currentMove == MoveDown)
             {
-                Task.Factory.StartNew(() =>
-                {
-                    while (FieldBounds.Contains(Tank.Bullet.Location))
-                    {
-                        if (!Tank.Bullet.IsFlying)
-                        {
-                            break;
-                        }
+                MoveBullet(Tank.Bullet.MoveDown);
+            }
+        }
 
-                        Tank.Bullet.MoveDown();
-                        Thread.Sleep(200);
+        private void MoveBullet(Action move)
+        {
+            Task.Factory.StartNew(() =>
+            {
+                while (FieldBounds.Contains(Tank.Bullet.Location))
+                {
+                    if (!Tank.Bullet.IsFlying)
+                    {
+                        break;
                     }
 
-                    Tank.IsFire = false;
+                    move();
+                    Thread.Sleep(100);
+                }
 
-                });
-            }
+                Tank.IsFire = false;
+                Tank.Bullet.IsFlying = false;
+                Tank.Bullet.Location = Tank.Muzzle;
+
+            });
         }
 
         public Point GetNextLocation(Directions direction)

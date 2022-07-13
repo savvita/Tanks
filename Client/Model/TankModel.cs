@@ -18,6 +18,12 @@
 
         public bool IsAlive { get; set; } = true;
 
+        public int Health { get; set; } = 100;
+
+        public int Damage { get; set; } = 50;
+
+        public bool IsHit { get; set; } = false;
+
         /// <summary>
         /// Bounds of the tank
         /// </summary>

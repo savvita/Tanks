@@ -96,20 +96,25 @@ namespace Client.View
                             fireEnemyCount++;
                         }
 
-                        this.graphics.FillEllipse(Brushes.Green, new Rectangle(controller.Enemy.Bullet.Location, new Size(5, 5)));
+                        this.graphics.FillEllipse(Brushes.Black, new Rectangle(controller.Enemy.Bullet.Location, new Size(7, 7)));
                     }
                     else
                     {
                         fireEnemyCount = 0;
                     }
 
-                    if (!controller.Enemy.IsAlive)
+                    if (controller.Enemy.IsHit)
                     {
-                        if (bangEnemyCount < 5)
+                        if (bangEnemyCount < 3)
                         {
                             DrawBang(controller.Enemy, bangEnemyCount);
 
                             bangEnemyCount++;
+                        }
+                        else
+                        {
+                            bangEnemyCount = 0;
+                            controller.Enemy.IsHit = false;
                         }
                     }
                 }
@@ -122,15 +127,24 @@ namespace Client.View
                         fireCount++;
                     }
 
-                    this.graphics.FillEllipse(Brushes.Green, new Rectangle(controller.TankController.Tank.Bullet.Location, new Size(5, 5)));
+                    this.graphics.FillEllipse(Brushes.Black, new Rectangle(controller.TankController.Tank.Bullet.Location, new Size(7, 7)));
+                }
+                else
+                {
+                    fireCount = 0;
                 }
 
-                if (!controller.TankController.Tank.IsAlive)
+                if (controller.TankController.Tank.IsHit)
                 {
-                    if (bangCount < 5)
+                    if (bangCount < 3)
                     {
                         DrawBang(controller.TankController.Tank, bangCount);
                         bangCount++;
+                    }
+                    else
+                    {
+                        bangCount = 0;
+                        controller.TankController.Tank.IsHit = false;
                     }
                 }
 

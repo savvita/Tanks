@@ -132,13 +132,25 @@ namespace Client.Controller
                     if(Enemy.IsFire && TankController.Tank.TankRectangle.Contains(Enemy.Bullet.Location))
                     {
                         Enemy.Bullet.IsFlying = false;
-                        TankController.Tank.IsAlive = false;
+                        TankController.Tank.Health -= Enemy.Damage;
+                        TankController.Tank.IsHit = true;
+
+                        if (TankController.Tank.Health <= 0)
+                        {
+                            TankController.Tank.IsAlive = false;
+                        }
                     }
 
                     if(TankController.Tank.IsFire && Enemy.TankRectangle.Contains(TankController.Tank.Bullet.Location))
                     {
                         TankController.Tank.Bullet.IsFlying = false;
-                        Enemy.IsAlive = false;
+
+                        Enemy.Health -= TankController.Tank.Damage;
+                        Enemy.IsHit = true;
+                        if (Enemy.Health <= 0)
+                        {
+                            Enemy.IsAlive = false;
+                        }
                     }
                 }
                 catch { }
