@@ -40,7 +40,76 @@ namespace Client.Controller
             Tank.Size = new Size(SpriteImage.MovingRightImageBounds.Width / 4, SpriteImage.MovingRightImageBounds.Height / 4);
 
             TankImageBounds = SpriteImage.MovingRightImageBounds.Rectangle;
+            currentMove = MoveRight;
+        }
 
+        private Func<Rectangle> currentMove;
+
+        public void Fire()
+        {
+            if(Tank.IsFire)
+            {
+                return;
+            }
+
+            Tank.IsFire = true;
+
+            if(currentMove == MoveRight)
+            {
+                Task.Factory.StartNew(() =>
+                {
+                    while (FieldBounds.Contains(Tank.Bullet.Location))
+                    {
+                        Tank.Bullet.MoveRight();
+                        Thread.Sleep(100);
+                    }
+
+                    Tank.IsFire = false;
+
+                });
+            }
+            else if (currentMove == MoveLeft)
+            {
+                Task.Factory.StartNew(() =>
+                {
+                    while (FieldBounds.Contains(Tank.Bullet.Location))
+                    {
+                        Tank.Bullet.MoveLeft();
+                        Thread.Sleep(500);
+                    }
+
+                    Tank.IsFire = false;
+
+                });
+            }
+            else if (currentMove == MoveUp)
+            {
+                Task.Factory.StartNew(() =>
+                {
+                    while (FieldBounds.Contains(Tank.Bullet.Location))
+                    {
+                        Tank.Bullet.MoveUp();
+                        Thread.Sleep(500);
+                    }
+
+                    Tank.IsFire = false;
+
+                });
+            }
+            else if (currentMove == MoveDown)
+            {
+                Task.Factory.StartNew(() =>
+                {
+                    while (FieldBounds.Contains(Tank.Bullet.Location))
+                    {
+                        Tank.Bullet.MoveDown();
+                        Thread.Sleep(500);
+                    }
+
+                    Tank.IsFire = false;
+
+                });
+            }
         }
 
         public Rectangle MoveLeft()
@@ -59,6 +128,15 @@ namespace Client.Controller
             Rectangle rect = SpriteImage.MovingLeftImageBounds.Rectangle;
 
             TankImageBounds = rect;
+
+            Tank.Muzzle = new Point(Tank.Location.X, Tank.Location.Y + Tank.Size.Height / 2);
+
+            if (!Tank.IsFire)
+            {
+                Tank.Bullet.Location = Tank.Muzzle;
+            }
+
+            currentMove = MoveLeft;
 
             return rect;
         }
@@ -80,6 +158,15 @@ namespace Client.Controller
 
             TankImageBounds = rect;
 
+            Tank.Muzzle = new Point(Tank.Location.X + Tank.Size.Width, Tank.Location.Y + Tank.Size.Height / 2);
+
+            if (!Tank.IsFire)
+            {
+                Tank.Bullet.Location = Tank.Muzzle;
+            }
+
+            currentMove = MoveRight;
+
             return rect;
         }
 
@@ -100,6 +187,15 @@ namespace Client.Controller
 
             TankImageBounds = rect;
 
+            Tank.Muzzle = new Point(Tank.Location.X + Tank.Size.Width / 2, Tank.Location.Y);
+
+            if (!Tank.IsFire)
+            {
+                Tank.Bullet.Location = Tank.Muzzle;
+            }
+
+            currentMove = MoveUp;
+
             return rect;
         }
 
@@ -119,6 +215,15 @@ namespace Client.Controller
             Rectangle rect = SpriteImage.MovingDownImageBounds.Rectangle;
 
             TankImageBounds = rect;
+
+            Tank.Muzzle = new Point(Tank.Location.X + Tank.Size.Width / 2, Tank.Location.Y + Tank.Size.Height);
+            
+            if(!Tank.IsFire)
+            {
+                Tank.Bullet.Location = Tank.Muzzle;
+            }
+
+            currentMove = MoveDown;
 
             return rect;
         }

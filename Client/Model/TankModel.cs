@@ -2,12 +2,18 @@
 {
     public class TankModel
     {
-        public Bitmap Image { get; set; }
+        [NonSerialized]
+        public Bitmap Image;
+
         public Point Location { get; set; }
         public int Speed { get; set; } = 10;
 
         public Size Size { get; set; }
 
-        public Point 
+        public Point Muzzle { get; set; }
+
+        public BulletModel Bullet { get; set; } = new BulletModel();
+
+        public bool IsFire { get; set; }
     }
 }

@@ -39,6 +39,7 @@
             this.Name = "GameForm";
             this.Text = "GameForm";
             this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.GameForm_KeyDown);
+            this.MouseClick += new System.Windows.Forms.MouseEventHandler(this.GameForm_MouseClick);
             this.ResumeLayout(false);
 
         }
