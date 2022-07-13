@@ -32,17 +32,11 @@ namespace Client.View
             this.bufferedImage = new Bitmap(this.Width, this.Height);
             this.graphics = Graphics.FromImage(bufferedImage);
 
-
-        }
-
-        public GameForm(FieldController controller) : this()
-        {
-            this.controller = controller;
-            this.controller.TankController.FieldBounds = new Rectangle(0, 0, this.Width - 10, this.Height - 40);
-
             this.tankImage = new Bitmap(Properties.Resources.Tank);
             this.tankImage.MakeTransparent(Color.White);
             this.tankImage.MakeTransparent();
+
+            controller = new FieldController(new Rectangle(0, 0, this.Width - 10, this.Height - 40));
 
             //this.fireImage = new Bitmap(Properties.Resources.Fire);
             //this.fireImage.MakeTransparent(Color.White);
@@ -54,7 +48,29 @@ namespace Client.View
             };
 
             thread.Start();
+
         }
+
+        //public GameForm(FieldController controller) : this()
+        //{
+        //    //this.controller = controller;
+        //    //this.controller.TankController.FieldBounds = new Rectangle(0, 0, this.Width - 10, this.Height - 40);
+
+        //    this.tankImage = new Bitmap(Properties.Resources.Tank);
+        //    this.tankImage.MakeTransparent(Color.White);
+        //    this.tankImage.MakeTransparent();
+
+        //    //this.fireImage = new Bitmap(Properties.Resources.Fire);
+        //    //this.fireImage.MakeTransparent(Color.White);
+        //    //this.fireImage.MakeTransparent(Color.FromArgb(238, 238, 238));
+
+        //    Thread thread = new Thread(Drawing)
+        //    {
+        //        IsBackground = true
+        //    };
+
+        //    thread.Start();
+        //}
 
         private void Drawing()
         {
@@ -167,19 +183,19 @@ namespace Client.View
         {
             if(e.KeyCode == Keys.Left)
             {
-                controller.TankController.MoveLeft();
+                controller.Move(Directions.Left);
             }
             else if(e.KeyCode == Keys.Right)
             {
-                controller.TankController.MoveRight();
+                controller.Move(Directions.Right);
             }
             else if (e.KeyCode == Keys.Up)
             {
-                controller.TankController.MoveUp();
+                controller.Move(Directions.Up);
             }
             else if (e.KeyCode == Keys.Down)
             {
-                controller.TankController.MoveDown();
+                controller.Move(Directions.Down);
             }
             else if(e.KeyCode == Keys.Space)
             {

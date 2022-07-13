@@ -97,6 +97,11 @@ namespace Server.Model
             try
             {
                 server.AddClient(this);
+
+                if(server.Clients.Count == 1)
+                {
+                    server.BroadcastMessage("", "noenemies");
+                }
             }
             catch (Exception ex)
             {

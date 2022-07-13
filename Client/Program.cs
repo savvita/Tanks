@@ -23,10 +23,8 @@ namespace Client
             //    new ImageBounds(0, 0, 211, 350), 
             //    new ImageBounds(211, 0, 211, 350)));
 
-            FieldController controller = new FieldController();
 
-
-            Application.Run(new GameForm(controller));
+            Application.Run(new GameForm());
         }
     }
 }

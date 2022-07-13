@@ -11,7 +11,7 @@ namespace Client.Controller
     {
         public TankModel Tank { get; private set; }
 
-        public Rectangle FieldBounds;
+        public Rectangle FieldBounds { get; set; }
 
         /// <summary>
         /// Describe sprite image this tank
@@ -41,11 +41,11 @@ namespace Client.Controller
 
         }
 
-        private Func<Rectangle> currentMove;
+        private Func<Point, Rectangle> currentMove;
 
         public void Fire()
         {
-            if(Tank.IsFire || !Tank.IsAlive)
+            if (Tank.IsFire || !Tank.IsAlive)
             {
                 return;
             }
@@ -53,13 +53,13 @@ namespace Client.Controller
             Tank.IsFire = true;
             Tank.Bullet.IsFlying = true;
 
-            if(currentMove == MoveRight)
+            if (currentMove == MoveRight)
             {
                 Task.Factory.StartNew(() =>
                 {
                     while (FieldBounds.Contains(Tank.Bullet.Location))
                     {
-                        if(!Tank.Bullet.IsFlying)
+                        if (!Tank.Bullet.IsFlying)
                         {
                             break;
                         }
@@ -131,21 +131,67 @@ namespace Client.Controller
             }
         }
 
-        public Rectangle MoveLeft()
+        public Point GetNextLocation(Directions direction)
         {
-            if(!Tank.IsAlive)
+            Point point = new Point();
+            switch(direction)
+            {
+                case Directions.Left:
+                    if (Tank.Location.X - Tank.Speed >= FieldBounds.Location.X)
+                    {
+                        point = new Point(Tank.Location.X - Tank.Speed, Tank.Location.Y);
+                    }
+                    else
+                    {
+                        point = new Point(FieldBounds.Location.X, Tank.Location.Y);
+                    }
+                    break;
+
+                case Directions.Right:
+                    if (Tank.Location.X + Tank.Speed + Tank.Size.Width <= FieldBounds.Location.X + FieldBounds.Width)
+                    {
+                        point = new Point(Tank.Location.X + Tank.Speed, Tank.Location.Y);
+                    }
+                    else
+                    {
+                        point = new Point(FieldBounds.Location.X + FieldBounds.Width - Tank.Size.Width, Tank.Location.Y);
+                    }
+                    break;
+
+                case Directions.Up:
+                    if (Tank.Location.Y - Tank.Speed >= FieldBounds.Location.Y)
+                    {
+                        point = new Point(Tank.Location.X, Tank.Location.Y - Tank.Speed);
+                    }
+                    else
+                    {
+                        point = new Point(Tank.Location.X, FieldBounds.Location.Y);
+                    }
+                    break;
+
+                case Directions.Down:
+                    if (Tank.Location.Y + Tank.Speed + Tank.Size.Height <= FieldBounds.Location.Y + FieldBounds.Height)
+                    {
+                        point = new Point(Tank.Location.X, Tank.Location.Y + Tank.Speed);
+                    }
+                    else
+                    {
+                        point = new Point(Tank.Location.X, FieldBounds.Location.Y + FieldBounds.Height - Tank.Size.Height);
+                    }
+                    break;
+            }
+
+            return point;
+        }
+
+        public Rectangle MoveLeft(Point location)
+        {
+            if (!Tank.IsAlive)
             {
                 return Tank.TankRectangle;
             }
 
-            if (Tank.Location.X - Tank.Speed >= FieldBounds.Location.X)
-            {
-                Tank.Location = new Point(Tank.Location.X - Tank.Speed, Tank.Location.Y);
-            }
-            else
-            {
-                Tank.Location = new Point(FieldBounds.Location.X, Tank.Location.Y);
-            }
+            Tank.Location = location;
 
             Tank.Size = new Size(SpriteImage.MovingLeftImageBounds.Width / 4, SpriteImage.MovingLeftImageBounds.Height / 4);
 
@@ -165,21 +211,14 @@ namespace Client.Controller
             return rect;
         }
 
-        public Rectangle MoveRight()
+        public Rectangle MoveRight(Point location)
         {
             if (!Tank.IsAlive)
             {
                 return Tank.TankRectangle;
             }
 
-            if (Tank.Location.X + Tank.Speed + Tank.Size.Width <= FieldBounds.Location.X + FieldBounds.Width)
-            {
-                Tank.Location = new Point(Tank.Location.X + Tank.Speed, Tank.Location.Y);
-            }
-            else
-            {
-                Tank.Location = new Point(FieldBounds.Location.X + FieldBounds.Width - Tank.Size.Width, Tank.Location.Y);
-            }
+            Tank.Location = location;
 
             Tank.Size = new Size(SpriteImage.MovingRightImageBounds.Width / 4, SpriteImage.MovingRightImageBounds.Height / 4);
 
@@ -199,21 +238,14 @@ namespace Client.Controller
             return rect;
         }
 
-        public Rectangle MoveUp()
+        public Rectangle MoveUp(Point location)
         {
             if (!Tank.IsAlive)
             {
                 return Tank.TankRectangle;
             }
 
-            if (Tank.Location.Y - Tank.Speed >= FieldBounds.Location.Y)
-            {
-                Tank.Location = new Point(Tank.Location.X, Tank.Location.Y - Tank.Speed);
-            }
-            else
-            {
-                Tank.Location = new Point(Tank.Location.X, FieldBounds.Location.Y);
-            }
+            Tank.Location = location;
 
             Tank.Size = new Size(SpriteImage.MovingUpImageBounds.Width / 4, SpriteImage.MovingUpImageBounds.Height / 4);
 
@@ -233,21 +265,14 @@ namespace Client.Controller
             return rect;
         }
 
-        public Rectangle MoveDown()
+        public Rectangle MoveDown(Point location)
         {
             if (!Tank.IsAlive)
             {
                 return Tank.TankRectangle;
             }
 
-            if (Tank.Location.Y + Tank.Speed + Tank.Size.Height <= FieldBounds.Location.Y + FieldBounds.Height)
-            {
-                Tank.Location = new Point(Tank.Location.X, Tank.Location.Y + Tank.Speed);
-            }
-            else
-            {
-                Tank.Location = new Point(Tank.Location.X, FieldBounds.Location.Y + FieldBounds.Height - Tank.Size.Height);
-            }
+            Tank.Location = location;
 
             Tank.Size = new Size(SpriteImage.MovingDownImageBounds.Width / 4, SpriteImage.MovingDownImageBounds.Height / 4);
 
@@ -256,8 +281,8 @@ namespace Client.Controller
             Tank.TankImageBounds = rect;
 
             Tank.Muzzle = new Point(Tank.Location.X + Tank.Size.Width / 2, Tank.Location.Y + Tank.Size.Height);
-            
-            if(!Tank.IsFire)
+
+            if (!Tank.IsFire)
             {
                 Tank.Bullet.Location = Tank.Muzzle;
             }
@@ -267,4 +292,12 @@ namespace Client.Controller
             return rect;
         }
     }
+}
+
+public enum Directions
+{
+    Left, 
+    Right, 
+    Up, 
+    Down
 }

@@ -15,7 +15,7 @@ namespace Client.Controller
 
         private ClientModel client;
 
-        public FieldController()
+        public FieldController(Rectangle fieldBounds)
         {
             TankController = new TankController(new SpriteImageModel(
                 Properties.Resources.Tank,
@@ -24,14 +24,47 @@ namespace Client.Controller
                 new ImageBounds(0, 0, 211, 350),
                 new ImageBounds(211, 0, 211, 350)));
 
+            TankController.FieldBounds = fieldBounds;
+
             client = new ClientModel("127.0.0.1", 8008);
 
             Connect();
         }
 
-        public bool IsMovePossible()
+        private bool IsMovePossible(Point location, Directions direction)
         {
-            return false;
+            if(new Rectangle(location, TankController.Tank.Size).IntersectsWith(Enemy.TankRectangle))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        public void Move(Directions direction)
+        {
+            Point location = TankController.GetNextLocation(direction);
+
+            if(!IsMovePossible(location, direction))
+            {
+                location = TankController.Tank.Location;
+            }
+
+            switch(direction)
+            {
+                case Directions.Left:
+                    TankController.MoveLeft(location);
+                    break;
+                case Directions.Right:
+                    TankController.MoveRight(location);
+                    break;
+                case Directions.Up:
+                    TankController.MoveUp(location);
+                    break;
+                case Directions.Down:
+                    TankController.MoveDown(location);
+                    break;
+            }
         }
 
         /// <summary>
@@ -43,6 +76,24 @@ namespace Client.Controller
 
             if (result)
             {
+                try
+                {
+                    bool isSuccess;
+                    string? init = client.ReceiveMessage(out isSuccess);
+
+                    Enemy = JsonSerializer.Deserialize<TankModel>(init);
+
+                    if (Enemy != null)
+                    {
+                        TankController.Tank.Location = new Point(TankController.FieldBounds.Width - TankController.Tank.TankRectangle.Width,
+                            TankController.FieldBounds.Height - TankController.Tank.TankRectangle.Height);
+
+                        TankController.MoveLeft(TankController.Tank.Location);
+
+                    }
+                }
+                catch { }
+
                 string? msg = JsonSerializer.Serialize<TankModel>(TankController.Tank);
                 client.SendMessage(msg);
                 Thread listeningThread = new Thread(ReceivingMessages)
