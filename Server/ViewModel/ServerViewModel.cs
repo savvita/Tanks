@@ -14,5 +14,10 @@ namespace Server.ViewModel
         {
             Task.Factory.StartNew(Server.Listen);
         }
+
+        public void Disconnect()
+        {
+            Server.Close();
+        }
     }
 }

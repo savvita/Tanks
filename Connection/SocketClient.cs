@@ -21,6 +21,26 @@ namespace Connection
         public const string STOP_CODE = "/out";
 
         /// <summary>
+        /// Ok code
+        /// </summary>
+        public static string OkCode { get; set; } = "/ok";
+
+        /// <summary>
+        /// Fail code
+        /// </summary>
+        public static string FailCode { get; set; } = "/fail";
+
+        /// <summary>
+        /// Authorization code
+        /// </summary>
+        public static string AuthorizationCode { get; set; } = "/login";
+
+        /// <summary>
+        /// Registration code
+        /// </summary>
+        public static string RegistrationCode { get; set; } = "/register";
+
+        /// <summary>
         /// Send a message to the stream
         /// </summary>
         /// <param name="stream">Network stream</param>

@@ -1,14 +1,5 @@
 ﻿using Client.Controller;
 using Client.Model;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 
 namespace Client.View
 {
@@ -45,7 +36,17 @@ namespace Client.View
             this.bangImage.MakeTransparent(Color.White);
             this.bangImage.MakeTransparent();
 
-            controller = new FieldController(new Rectangle(0, 0, this.Width - 10, this.Height - 40));
+            
+
+
+        }
+
+        public GameForm(ClientModel client) : this()
+        {
+            controller = new FieldController(new Rectangle(0, 0, this.Width - 10, this.Height - 40), client);
+            controller.TankController.Tank.Name = client.Name;
+            controller.Connect();
+
 
             Thread thread = new Thread(Drawing)
             {
@@ -53,14 +54,13 @@ namespace Client.View
             };
 
             thread.Start();
-
         }
 
-        public GameForm(string name) : this()
-        {
-            controller.TankController.Tank.Name = name;
-            controller.Connect();
-        }
+        //public GameForm(string name) : this()
+        //{
+        //    controller.TankController.Tank.Name = name;
+        //    controller.Connect();
+        //}
 
         //public GameForm(FieldController controller) : this()
         //{

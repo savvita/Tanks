@@ -132,5 +132,73 @@ namespace Client.Model
                 tcpClient.Close();
             }
         }
+        /// <summary>
+        /// Authorizate at the server
+        /// </summary>
+        /// <param name="login">Login</param>
+        /// <param name="password">Password</param>
+        /// <returns>True if authorization is successful otherwise false</returns>
+        public bool Authorizate(string login, string password)
+        {
+            bool connected = Connect();
+
+            if (connected)
+            {
+                try
+                {
+                    client.SendMessage(stream, SocketClient.AuthorizationCode);
+
+                    return GetAuthorizationResponse(login, password);
+                }
+                catch { }
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Register a new user
+        /// </summary>
+        /// <param name="login">Login</param>
+        /// <param name="password">Password</param>
+        /// <returns>True if registration is successful otherwise false</returns>
+        public bool Register(string login, string password)
+        {
+            bool connected = Connect();
+
+            if (connected)
+            {
+                try
+                {
+                    client.SendMessage(stream, SocketClient.RegistrationCode);
+
+                    return GetAuthorizationResponse(login, password);
+                }
+                catch { }
+            }
+            return false;
+        }
+
+        private bool GetAuthorizationResponse(string login, string password)
+        {
+            if (stream == null)
+            {
+                return false;
+            }
+
+            client.ReceiveMessage(stream);
+            client.SendMessage(stream, string.Join(',', login, password));
+
+            string response = client.ReceiveMessage(stream);
+
+            if (!response.Equals(SocketClient.FailCode))
+            {
+                this.Name = login;
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
     }
 }

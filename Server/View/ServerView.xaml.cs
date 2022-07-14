@@ -20,10 +20,16 @@ namespace Server.View
     /// </summary>
     public partial class ServerView : Window
     {
+        private ServerViewModel server = new ServerViewModel();
         public ServerView()
         {
             InitializeComponent();
-            this.DataContext = new ServerViewModel();
+            this.DataContext = server;
+        }
+
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            server.Disconnect();
         }
     }
 }

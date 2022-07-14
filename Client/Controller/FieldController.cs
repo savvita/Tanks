@@ -12,7 +12,7 @@ namespace Client.Controller
 
         private ClientModel client;
 
-        public FieldController(Rectangle fieldBounds)
+        public FieldController(Rectangle fieldBounds,ClientModel client)
         {
             TankController = new TankController(new SpriteImageModel(
                 Properties.Resources.Tank,
@@ -23,7 +23,8 @@ namespace Client.Controller
 
             TankController.FieldBounds = fieldBounds;
 
-            client = new ClientModel("127.0.0.1", 8008);
+            //client = new ClientModel("127.0.0.1", 8008);
+            this.client = client;
 
             //Connect();
         }
@@ -83,10 +84,10 @@ namespace Client.Controller
         /// </summary>
         public void Connect()
         {
-            bool result = client.Connect();
+            //bool result = client.Connect();
 
-            if (result)
-            {
+            //if (result)
+            //{
                 try
                 {
                     bool isSuccess;
@@ -175,7 +176,7 @@ namespace Client.Controller
                     IsBackground = true
                 };
                 sendingThread.Start();
-            }
+            //}
         }
 
         /// <summary>

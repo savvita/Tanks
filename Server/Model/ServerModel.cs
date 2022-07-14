@@ -1,6 +1,7 @@
 ﻿using Connection;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -69,9 +70,7 @@ namespace Server.Model
                 {
                     TcpClient tcpClient = listener.AcceptTcpClient();
 
-                    ClientModel client = new ClientModel(tcpClient, this);
-
-                    Thread thread = new Thread(client.Proceed)
+                    Thread thread = new Thread((obj) => HandleClient(tcpClient))
                     {
                         IsBackground = true
                     };
@@ -84,6 +83,83 @@ namespace Server.Model
             {
                 Close();
             }
+        }
+
+        /// <summary>
+        /// Handle client connection
+        /// </summary>
+        /// <param name="obj">TCP client</param>
+        private void HandleClient(object? obj)
+        {
+            if (obj is TcpClient tcpClient)
+            {
+                try
+                {
+                    NetworkStream stream = tcpClient.GetStream();
+
+                    
+                    //string[] cols = authorization.Split(',');
+
+                    string code = chat.ReceiveMessage(stream);
+                    chat.SendMessage(stream, SocketClient.OkCode);
+
+                    if (code.Equals(SocketClient.RegistrationCode))
+                    {
+                        string authorization = chat.ReceiveMessage(stream);
+
+                        string[] cols = authorization.Split(',');
+
+                        if (RegisterClient(cols[0], cols[1]))
+                        {
+                            chat.SendMessage(stream, SocketClient.OkCode);
+
+                            ClientModel client = new ClientModel(tcpClient, this);
+
+                            client.Proceed();
+                        }
+                        else
+                        {
+                            chat.SendMessage(stream, SocketClient.FailCode);
+                        }
+                    }
+                    else if (code.Equals(SocketClient.AuthorizationCode))
+                    {
+                        string authorization = chat.ReceiveMessage(stream);
+
+                        string[] cols = authorization.Split(',');
+
+                        if (AuthorizateClient(cols[0], cols[1]))
+                        {
+                            chat.SendMessage(stream, SocketClient.OkCode);
+
+                            ClientModel client = new ClientModel(tcpClient, this);
+
+                            client.Proceed();
+                        }
+                        else
+                        {
+                            chat.SendMessage(stream, SocketClient.FailCode);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    OnGotError($"[{DateTime.Now}] {ex.Message}");
+                }
+            }
+        }
+
+        private Users users = new Users();
+
+        private bool AuthorizateClient(string login, string password)
+        {
+            return users.IsUserRegistered(login, password);
+
+        }
+
+        private bool RegisterClient(string login, string password)
+        {
+            return users.RegisterUser(login, password);
         }
 
         public List<string?>? GetAllLastData()
@@ -165,6 +241,7 @@ namespace Server.Model
             {
                 clients[i].Close();
             }
+            users.SaveUsers();
             clients.Clear();
             listener?.Stop();
         }

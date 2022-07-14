@@ -101,12 +101,14 @@ namespace Server.Model
             {
                 server.AddClient(this);
 
-                if(server.Clients.Count == 1)
+                if (server.Clients.Count == 1)
                 {
                     server.SendMessage(this.Id, "noenemies");
                 }
-                
-                server.SendMessage(this.Id, String.Join('|', server.GetAllLastData()));
+                else
+                {
+                    server.SendMessage(this.Id, String.Join('|', server.GetAllLastData()));
+                }
             }
             catch (Exception ex)
             {
