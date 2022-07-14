@@ -63,6 +63,16 @@ namespace Server.Model
                     {
                         msg = client.ReceiveMessage(Stream);
 
+                        if(msg.Equals(SocketClient.ResultCode))
+                        {
+                            string res = client.ReceiveMessage(Stream);
+
+                            if(res.Equals(SocketClient.WinCode))
+                            {
+                                server.SetWin(this);
+                            }
+                        }
+
                         if (msg.Equals(SocketClient.STOP_CODE))
                         {
                             break;

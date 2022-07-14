@@ -9,7 +9,7 @@ namespace Client.Controller
 {
     public class TankController
     {
-        public TankModel Tank { get; private set; }
+        public TankModel Tank { get; set; }
 
         public Rectangle FieldBounds { get; set; }
 

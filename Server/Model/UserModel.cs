@@ -17,5 +17,11 @@ namespace Server.Model
         /// Password of the user
         /// </summary>
         public string? Password { get; set; }
+
+        public int TotalGames { get; set; }
+
+        public int TotalWins { get; set; }
+
+        public int Score { get; set; }
     }
 }

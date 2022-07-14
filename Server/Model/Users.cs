@@ -56,6 +56,31 @@ namespace Server.Model
             catch { }
         }
 
+        public void SetWin(string name)
+        {
+            for (int i = 0; i < users.Count; i++)
+            {
+                if (users[i].Login.Equals(name))
+                {
+                    users[i].TotalWins++;
+                    users[i].Score += 100;
+                    break;
+                }
+            }
+        }
+
+        public void SetTotal(string name)
+        {
+            for (int i = 0; i < users.Count; i++)
+            {
+                if (users[i].Login.Equals(name))
+                {
+                    users[i].TotalGames++;
+                    break;
+                }
+            }
+        }
+
         private UserModel AddToTheList(string? login, string? password)
         {
             UserModel model = new UserModel()

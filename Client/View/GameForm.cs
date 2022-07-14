@@ -43,8 +43,11 @@ namespace Client.View
 
         public GameForm(ClientModel client) : this()
         {
+            context = SynchronizationContext.Current;
             controller = new FieldController(new Rectangle(0, 0, this.Width - 10, this.Height - 40), client);
             controller.TankController.Tank.Name = client.Name;
+            controller.Lost += Controller_Lost;
+            controller.Win += Controller_Win;
             controller.Connect();
 
 
@@ -55,6 +58,41 @@ namespace Client.View
 
             thread.Start();
         }
+
+        private void Controller_Lost()
+        {
+            context.Send(SetLost, null);
+        }
+
+        private void Controller_Win()
+        {
+
+            context.Send(SetWin, null);
+        }
+
+        private void SetWin(object? obj)
+        {
+            Label result = new Label();
+            result.Text = "You win!";
+            result.Font = new Font("Segoe UI", 32, FontStyle.Bold);
+            result.Size = new Size(400, 200);
+            result.Location = new Point((this.ClientRectangle.Width - result.Width) / 2, (this.ClientRectangle.Height - result.Height) / 2);
+
+            this.Controls.Add(result);
+        }
+
+        private void SetLost(object? obj)
+        {
+            Label result = new Label();
+            result.Text = "You lost (((";
+            result.Font = new Font("Segoe UI", 32, FontStyle.Bold);
+            result.Size = new Size(400, 200);
+            result.Location = new Point((this.ClientRectangle.Width - result.Width) / 2, (this.ClientRectangle.Height - result.Height) / 2);
+
+            this.Controls.Add(result);
+        }
+
+        private SynchronizationContext context;
 
         //public GameForm(string name) : this()
         //{

@@ -1,4 +1,5 @@
 ﻿using Client.Model;
+using Connection;
 using System.Text.Json;
 
 namespace Client.Controller
@@ -11,6 +12,8 @@ namespace Client.Controller
         public List<TankModel>? Enemies { get; set; } = new List<TankModel>();
 
         private ClientModel client;
+
+        private bool isGameStarted = false;
 
         public FieldController(Rectangle fieldBounds,ClientModel client)
         {
@@ -179,6 +182,9 @@ namespace Client.Controller
             //}
         }
 
+        public event Action Lost;
+        public event Action Win;
+
         /// <summary>
         /// Receiving messages unless the connection is not failed or stopped
         /// </summary>
@@ -195,8 +201,16 @@ namespace Client.Controller
 
                     if (enemy == null)
                     {
+                        isGameStarted = false;
                         continue;
                     }
+
+                    if(TankController.Tank.Name.Equals(enemy.Name))
+                    {
+                        TankController.Tank = enemy;
+                    }
+
+                    //isGameStarted = true;
 
                     if (Enemies == null)
                         continue;
@@ -223,6 +237,7 @@ namespace Client.Controller
                             if (TankController.Tank.Health <= 0)
                             {
                                 TankController.Tank.IsAlive = false;
+                                Lost?.Invoke();
                             }
                         }
 
@@ -235,7 +250,33 @@ namespace Client.Controller
                             if (Enemies[i].Health <= 0)
                             {
                                 Enemies[i].IsAlive = false;
+
+                                int count = 0;
+                                for (int j = 0; j < Enemies.Count; j++)
+                                {
+                                    if (Enemies[j].IsAlive)
+                                    {
+                                        count++;
+                                        break;
+                                    }
+                                }
+
+                                try
+                                {
+                                    string? damage = JsonSerializer.Serialize<TankModel>(Enemies[i]);
+                                    client.SendMessage(damage);
+                                }
+                                catch { }
+
+                                if (count == 0)
+                                {
+                                    client.SendMessage(SocketClient.ResultCode);
+                                    client.SendMessage(SocketClient.WinCode);
+                                    Win?.Invoke();
+                                }
                             }
+
+
                         }
                     }
                 }

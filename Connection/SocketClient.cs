@@ -40,6 +40,12 @@ namespace Connection
         /// </summary>
         public static string RegistrationCode { get; set; } = "/register";
 
+        public static string ResultCode { get; set; } = "/result";
+
+        public static string WinCode { get; set; } = "/win";
+
+        public static string LostCode { get; set; } = "/lost";
+
         /// <summary>
         /// Send a message to the stream
         /// </summary>
@@ -48,7 +54,15 @@ namespace Connection
         public void SendMessage(NetworkStream stream, string message)
         {
             byte[] data = MessageEncoding.GetBytes(message);
-            stream.Write(data, 0, data.Length);
+
+            //using (BinaryWriter writer = new BinaryWriter(stream))
+            {
+                BinaryWriter writer = new BinaryWriter(stream);
+                writer.Write(data.Length);
+                writer.Write(data);
+            }
+            
+            //stream.Write(data, 0, data.Length);
         }
 
         /// <summary>
@@ -58,17 +72,29 @@ namespace Connection
         /// <returns>Received message</returns>
         public string ReceiveMessage(NetworkStream stream)
         {
-            StringBuilder sb = new StringBuilder();
-            byte[] data = new byte[BufferSize];
-            int count;
-
-            do
+            string msg = String.Empty;
+            //using (BinaryReader reader = new BinaryReader(stream))
             {
-                count = stream.Read(data, 0, BufferSize);
-                sb.Append(MessageEncoding.GetString(data, 0, count));
-            } while (stream.DataAvailable);
+                BinaryReader reader = new BinaryReader(stream);
+                int length = reader.ReadInt32();
+                byte[] data = new byte[length];
+                reader.Read(data, 0 , length);
+                msg = MessageEncoding.GetString(data, 0, length);
+            }
 
-            return sb.ToString();
+            return msg;
+
+            //StringBuilder sb = new StringBuilder();
+            //byte[] data = new byte[BufferSize];
+            //int count;
+
+            //do
+            //{
+            //    count = stream.Read(data, 0, BufferSize);
+            //    sb.Append(MessageEncoding.GetString(data, 0, count));
+            //} while (stream.DataAvailable);
+
+            //return sb.ToString();
         }
     }
 }

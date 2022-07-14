@@ -113,7 +113,13 @@ namespace Server.Model
                         {
                             chat.SendMessage(stream, SocketClient.OkCode);
 
-                            ClientModel client = new ClientModel(tcpClient, this);
+
+                            ClientModel client = new ClientModel(tcpClient, this)
+                            {
+                                Name = cols[0]
+                            };
+
+                            users.SetTotal(client.Name);
 
                             client.Proceed();
                         }
@@ -132,7 +138,12 @@ namespace Server.Model
                         {
                             chat.SendMessage(stream, SocketClient.OkCode);
 
-                            ClientModel client = new ClientModel(tcpClient, this);
+                            ClientModel client = new ClientModel(tcpClient, this)
+                            {
+                                Name = cols[0]
+                            };
+
+                            users.SetTotal(client.Name);
 
                             client.Proceed();
                         }
@@ -147,6 +158,11 @@ namespace Server.Model
                     OnGotError($"[{DateTime.Now}] {ex.Message}");
                 }
             }
+        }
+
+        public void SetWin(ClientModel client)
+        {
+            users.SetWin(client.Name);
         }
 
         private Users users = new Users();
@@ -221,7 +237,7 @@ namespace Server.Model
                 {
                     try
                     {
-                        chat.SendMessage(clients[i].Stream, message);
+                         chat.SendMessage(clients[i].Stream, message);
                     }
                     catch (Exception ex)
                     {

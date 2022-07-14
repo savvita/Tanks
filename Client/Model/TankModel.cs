@@ -22,7 +22,7 @@
 
         public int Health { get; set; } = 100;
 
-        public int Damage { get; set; } = 50;
+        public int Damage { get; set; } = 40;
 
         public bool IsHit { get; set; } = false;
 
