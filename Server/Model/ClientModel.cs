@@ -68,6 +68,8 @@ namespace Server.Model
                             break;
                         }
 
+                        LastData = msg;
+
                         if (msg != string.Empty)
                         {
                             server.BroadcastMessage(Id, msg);
@@ -87,6 +89,7 @@ namespace Server.Model
             }
         }
 
+        public string? LastData { get; set; }
 
         /// <summary>
         /// Enter the chat, get a name
@@ -100,8 +103,10 @@ namespace Server.Model
 
                 if(server.Clients.Count == 1)
                 {
-                    server.BroadcastMessage("", "noenemies");
+                    server.SendMessage(this.Id, "noenemies");
                 }
+                
+                server.SendMessage(this.Id, String.Join('|', server.GetAllLastData()));
             }
             catch (Exception ex)
             {

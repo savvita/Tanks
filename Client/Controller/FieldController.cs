@@ -1,17 +1,14 @@
 ﻿using Client.Model;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 
 namespace Client.Controller
 {
     public class FieldController
     {
         public TankController TankController { get; set; }
-        public TankModel? Enemy { get; set; } = null;
+
+        //public TankModel? Enemy { get; set; } = null;
+        public List<TankModel>? Enemies { get; set; } = new List<TankModel>();
 
         private ClientModel client;
 
@@ -28,29 +25,43 @@ namespace Client.Controller
 
             client = new ClientModel("127.0.0.1", 8008);
 
-            Connect();
+            //Connect();
         }
 
         private bool IsMovePossible(Point location, Directions direction)
         {
-            if(new Rectangle(location, TankController.Tank.Size).IntersectsWith(Enemy.TankRectangle))
+            if (Enemies == null)
             {
-                return false;
+                return true;
+            }
+
+            for (int i = 0; i < Enemies.Count; i++)
+            {
+                if (new Rectangle(location, TankController.Tank.Size).IntersectsWith(Enemies[i].TankRectangle))
+                {
+                    return false;
+                }
             }
 
             return true;
+            //if(new Rectangle(location, TankController.Tank.Size).IntersectsWith(Enemy.TankRectangle))
+            //{
+            //    return false;
+            //}
+
+            //return true;
         }
 
         public void Move(Directions direction)
         {
             Point location = TankController.GetNextLocation(direction);
 
-            if(!IsMovePossible(location, direction))
+            if (!IsMovePossible(location, direction))
             {
                 location = TankController.Tank.Location;
             }
 
-            switch(direction)
+            switch (direction)
             {
                 case Directions.Left:
                     TankController.MoveLeft(location);
@@ -70,7 +81,7 @@ namespace Client.Controller
         /// <summary>
         /// Connect to the server
         /// </summary>
-        private void Connect()
+        public void Connect()
         {
             bool result = client.Connect();
 
@@ -81,16 +92,73 @@ namespace Client.Controller
                     bool isSuccess;
                     string? init = client.ReceiveMessage(out isSuccess);
 
-                    Enemy = JsonSerializer.Deserialize<TankModel>(init);
+                    string[] enemies = init.Split('|');
 
-                    if (Enemy != null)
+                    for (int i = 0; i < enemies.Count(); i++)
                     {
-                        TankController.Tank.Location = new Point(TankController.FieldBounds.Width - TankController.Tank.TankRectangle.Width,
-                            TankController.FieldBounds.Height - TankController.Tank.TankRectangle.Height);
+                        TankModel? model = JsonSerializer.Deserialize<TankModel>(enemies[i]);
 
-                        TankController.MoveLeft(TankController.Tank.Location);
-
+                        if(model != null)
+                            Enemies.Add(model);
                     }
+
+                    if (Enemies != null)
+                    {
+                        Random random = new Random();
+
+                        bool isCorrect = false;
+
+                        do
+                        {
+                            TankController.Tank.Location = new Point(random.Next(TankController.FieldBounds.Width - TankController.Tank.TankRectangle.Width),
+                                random.Next(TankController.FieldBounds.Height - TankController.Tank.TankRectangle.Height));
+
+
+                            bool isIntersect = false;
+                            for (int i = 0; i < Enemies.Count; i++)
+                            {
+                                if (TankController.Tank.TankRectangle.IntersectsWith(Enemies[i].TankRectangle))
+                                {
+                                    isIntersect = true;
+                                    break;
+                                }
+
+                                isCorrect = !isIntersect;
+                            }
+
+                        } while (!isCorrect);
+
+                        int ch = random.Next(4);
+
+                        switch (ch)
+                        {
+                            case 0:
+                                TankController.MoveLeft(TankController.Tank.Location);
+                                break;
+                            case 1:
+                                TankController.MoveRight(TankController.Tank.Location);
+                                break;
+                            case 2:
+                                TankController.MoveUp(TankController.Tank.Location);
+                                break;
+                            case 3:
+                                TankController.MoveDown(TankController.Tank.Location);
+                                break;
+                        }
+                    }
+                    //bool isSuccess;
+                    //string? init = client.ReceiveMessage(out isSuccess);
+
+                    //Enemy = JsonSerializer.Deserialize<TankModel>(init);
+
+                    //if (Enemy != null)
+                    //{
+                    //    TankController.Tank.Location = new Point(TankController.FieldBounds.Width - TankController.Tank.TankRectangle.Width,
+                    //        TankController.FieldBounds.Height - TankController.Tank.TankRectangle.Height);
+
+                    //    TankController.MoveLeft(TankController.Tank.Location);
+
+                    //}
                 }
                 catch { }
 
@@ -122,38 +190,92 @@ namespace Client.Controller
                 {
                     string msg = client.ReceiveMessage(out isSuccess);
 
-                    Enemy = JsonSerializer.Deserialize<TankModel>(msg);
-                    
-                    if(Enemy == null)
+                    TankModel? enemy = JsonSerializer.Deserialize<TankModel>(msg);
+
+                    if (enemy == null)
                     {
                         continue;
                     }
 
-                    if(Enemy.IsFire && TankController.Tank.TankRectangle.Contains(Enemy.Bullet.Location))
-                    {
-                        Enemy.Bullet.IsFlying = false;
-                        TankController.Tank.Health -= Enemy.Damage;
-                        TankController.Tank.IsHit = true;
+                    if (Enemies == null)
+                        continue;
 
-                        if (TankController.Tank.Health <= 0)
-                        {
-                            TankController.Tank.IsAlive = false;
-                        }
+                    if (Enemies.Count(x => x.Name.Equals(enemy.Name)) == 0)
+                    {
+                        Enemies.Add(enemy);
                     }
 
-                    if(TankController.Tank.IsFire && Enemy.TankRectangle.Contains(TankController.Tank.Bullet.Location))
+                    for (int i = 0; i < Enemies.Count; i++)
                     {
-                        TankController.Tank.Bullet.IsFlying = false;
-
-                        Enemy.Health -= TankController.Tank.Damage;
-                        Enemy.IsHit = true;
-                        if (Enemy.Health <= 0)
+                        if (Enemies[i].Name != null && Enemies[i].Name.Equals(enemy.Name))
                         {
-                            Enemy.IsAlive = false;
+                            Enemies[i] = enemy;
+                        }
+
+
+                        if (Enemies[i].IsFire && TankController.Tank.TankRectangle.Contains(Enemies[i].Bullet.Location))
+                        {
+                            Enemies[i].Bullet.IsFlying = false;
+                            TankController.Tank.Health -= Enemies[i].Damage;
+                            TankController.Tank.IsHit = true;
+
+                            if (TankController.Tank.Health <= 0)
+                            {
+                                TankController.Tank.IsAlive = false;
+                            }
+                        }
+
+                        if (TankController.Tank.IsFire && Enemies[i].TankRectangle.Contains(TankController.Tank.Bullet.Location))
+                        {
+                            TankController.Tank.Bullet.IsFlying = false;
+
+                            Enemies[i].Health -= TankController.Tank.Damage;
+                            Enemies[i].IsHit = true;
+                            if (Enemies[i].Health <= 0)
+                            {
+                                Enemies[i].IsAlive = false;
+                            }
                         }
                     }
                 }
                 catch { }
+
+                //try
+                //{
+                //    string msg = client.ReceiveMessage(out isSuccess);
+
+                //    Enemy = JsonSerializer.Deserialize<TankModel>(msg);
+
+                //    if(Enemy == null)
+                //    {
+                //        continue;
+                //    }
+
+                //    if(Enemy.IsFire && TankController.Tank.TankRectangle.Contains(Enemy.Bullet.Location))
+                //    {
+                //        Enemy.Bullet.IsFlying = false;
+                //        TankController.Tank.Health -= Enemy.Damage;
+                //        TankController.Tank.IsHit = true;
+
+                //        if (TankController.Tank.Health <= 0)
+                //        {
+                //            TankController.Tank.IsAlive = false;
+                //        }
+                //    }
+
+                //    if(TankController.Tank.IsFire && Enemy.TankRectangle.Contains(TankController.Tank.Bullet.Location))
+                //    {
+                //        TankController.Tank.Bullet.IsFlying = false;
+
+                //        Enemy.Health -= TankController.Tank.Damage;
+                //        Enemy.IsHit = true;
+                //        if (Enemy.Health <= 0)
+                //        {
+                //            Enemy.IsAlive = false;
+                //        }
+                //    }
+                //}
+                //catch { }
 
             } while (true);
         }

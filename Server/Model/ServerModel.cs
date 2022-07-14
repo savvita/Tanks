@@ -86,6 +86,21 @@ namespace Server.Model
             }
         }
 
+        public List<string?>? GetAllLastData()
+        {
+            if (Clients == null)
+                return null;
+
+            List<string?>? data = new List<string?>();
+            for (int i = 0; i < Clients.Count; i++)
+            {
+                if(Clients[i].LastData != null)
+                    data.Add(Clients[i].LastData);
+            }
+
+            return data;
+        }
+
         /// <summary>
         /// Add new client model to the list of active clients
         /// </summary>
@@ -161,6 +176,25 @@ namespace Server.Model
         public void OnGotError(string message)
         {
             GotError?.Invoke(message);
+        }
+
+        /// <summary>
+        /// Send message from the server to the client
+        /// </summary>
+        /// <param name="id">Id of the client to send a message to</param>
+        /// <param name="message">Message</param>
+        public void SendMessage(string id, string? message)
+        {
+            try
+            {
+                ClientModel? client = GetClientById(id);
+
+                if (client != null && message != null)
+                {
+                    chat.SendMessage(client.Stream, message);
+                }
+            }
+            catch { }
         }
     }
 }

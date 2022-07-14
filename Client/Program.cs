@@ -24,7 +24,7 @@ namespace Client
             //    new ImageBounds(211, 0, 211, 350)));
 
 
-            Application.Run(new GameForm());
+            Application.Run(new AuthorizationForm());
         }
     }
 }

@@ -5,6 +5,8 @@
         [NonSerialized]
         public Bitmap Image;
 
+        public string? Name { get; set; }
+
         public Point Location { get; set; }
         public int Speed { get; set; } = 5;
 
