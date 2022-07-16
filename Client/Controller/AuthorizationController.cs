@@ -25,6 +25,8 @@ namespace Client.Controller
             if(result)
             {
                 Client.Name = login;
+                Client.TotalGames = int.Parse(Client.ReceiveMessage(out bool _));
+                Client.WonGames = int.Parse(Client.ReceiveMessage(out bool _));
             }
 
             return result;
@@ -48,6 +50,8 @@ namespace Client.Controller
             if(result)
             {
                 Client.Name = login;
+                Client.TotalGames = int.Parse(Client.ReceiveMessage(out bool _));
+                Client.WonGames = int.Parse(Client.ReceiveMessage(out bool _));
             }
 
             return result;

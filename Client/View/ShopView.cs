@@ -1,43 +1,66 @@
-﻿using Client.Model;
+﻿using Client.Controller;
+using Client.Model;
 
 namespace Client.View
 {
     public partial class ShopView : Form
     {
         private List<ItemControl> controls = new List<ItemControl>();
+        private ShopController? controller;
 
         private int coinsToUse;
-
-        public int Health { get; set; } = 0;
-
-        public int Damage { get; set; } = 0;
-
-        public int TotalCost { get; set; }
-
-
+        private int health = 0;
+        private int damage = 0;
 
         public ShopView()
         {
             InitializeComponent();
         }
 
-        public ShopView(int coins) : this()
+        public ShopView(ClientModel client) : this()
         {
-            this.coinsToUse = coins;
+            controller = new ShopController(client);
+            this.coinsToUse = controller.Coins;
             InitializeControls();
             RefreshControls();
+            RefreshValues();
+
+            this.pictureBox.Image = Properties.Resources.TankPreview;
         }
 
         private void InitializeControls()
         {
-            controls.Add(new ItemControl(new ItemModel() { Cost = 10, Title = "Armor", Type = ItemTypes.Armor, Value = 5 }));
-            controls.Add(new ItemControl(new ItemModel() { Cost = 20, Title = "Weapon", Type = ItemTypes.Weapon, Value = 15 }));
+            controls.Add(new ItemControl(new ItemModel() 
+            { 
+                Cost = 50, 
+                Title = "Light armor", 
+                Type = ItemTypes.Armor, 
+                Value = 5,
+                Image = Properties.Resources.Helmet
+            }));
+
+            controls.Add(new ItemControl(new ItemModel() 
+            { 
+                Cost = 80, 
+                Title = "Hard armor", 
+                Type = ItemTypes.Armor, 
+                Value = 10,
+                Image = Properties.Resources.Plantain
+            }));
+
+            controls.Add(new ItemControl(new ItemModel() { 
+                Cost = 80, 
+                Title = "Weapon", 
+                Type = ItemTypes.Weapon, 
+                Value = 15,
+                Image = Properties.Resources.Slingshot
+            }));
 
             SetLocations();
 
             controls.ForEach((control) => control.ButtonClicked += Control_AddButtonClicked);
 
-            this.Controls.AddRange(controls.ToArray());
+            this.itemsPanel.Controls.AddRange(controls.ToArray());
         }
 
         private void SetLocations()
@@ -51,32 +74,40 @@ namespace Client.View
             {
                 control.Location = new Point(width, height);
 
-                height += control.Height + margin;
+                width += control.Width + margin;
 
-                if (height + control.Height >= this.ClientRectangle.Height)
+                if (width + control.Width >= this.ClientRectangle.Width)
                 {
-                    height = margin;
-                    width += control.Width + margin;
+                    width = margin;
+                    height += control.Height + margin;
                 }
             }
         }
 
         private void Control_AddButtonClicked(ItemControl control)
         {
+            if(controller == null)
+            {
+                return;
+            }
+
             switch (control.Type)
             {
                 case ItemTypes.Armor:
-                    Health += control.Value;
+                    health = control.Value;
                     break;
                 case ItemTypes.Weapon:
-                    Damage += control.Value;
+                    damage = control.Value;
                     break;
             }
 
-            TotalCost += control.Cost;
+            controller.AcceptNewValues(health, damage, control.Cost);
 
             coinsToUse -= control.Cost;
+            health = 0;
+            damage = 0;
             RefreshControls();
+            RefreshValues();
         }
 
         public void RefreshControls()
@@ -90,13 +121,28 @@ namespace Client.View
             });
         }
 
-        public event Action<ItemTypes>? ButtonClicked;
 
+        private void RefreshValues()
+        {
+            if (controller != null)
+            {
+                this.coinsLabel.Text = $"Coins: {controller.Coins.ToString()}";
+                this.healthLabel.Text = $"Health: {controller.Health.ToString()}";
+                this.damageLabel.Text = $"Damage: {controller.Damage.ToString()}";
+            }
+        }
+
+        public event Action<ItemTypes>? ButtonClicked;
 
         protected void OnButtonClicked(ItemTypes type)
         {
             if (ButtonClicked != null)
                 ButtonClicked(type);
+        }
+
+        private void closeButton_Click(object sender, EventArgs e)
+        {
+            this.Close();
         }
     }
 }

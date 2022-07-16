@@ -1,13 +1,4 @@
 ﻿using Client.Model;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 
 namespace Client.View
 {
@@ -15,7 +6,7 @@ namespace Client.View
     {
         public int Cost { get; private set; }
 
-        public event Action<ItemControl> ButtonClicked;
+        public event Action<ItemControl>? ButtonClicked;
 
         public ItemTypes Type { get; }
 

@@ -3,7 +3,7 @@ using Connection;
 
 namespace Client.Controller
 {
-    public class StartController
+    public class ShopController
     {
         public ClientModel? Client { get; }
 
@@ -13,9 +13,14 @@ namespace Client.Controller
 
         public int Damage { get; private set; }
 
-        public StartController(ClientModel client)
+        public ShopController(ClientModel client)
         {
             Client = client;
+
+            Client.SendMessage(SocketClient.ShopCode);
+            Client.SendMessage(0.ToString());
+            Client.SendMessage(0.ToString());
+            Client.SendMessage(0.ToString());
 
             SetValues();
         }

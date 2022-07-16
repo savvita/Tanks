@@ -11,6 +11,7 @@ namespace Client.View
         private Bitmap tankImage;
         private Bitmap deadTankImage;
         private Bitmap bangImage;
+        private Bitmap backImage;
         private Graphics graphics;
         #endregion
 
@@ -20,6 +21,8 @@ namespace Client.View
 
         private int[] fireCount = new int[5];
         private int[] bangCount = new int[5];
+
+        private Font font = new Font("Segoe UI", 14);
 
         public GameForm()
         {
@@ -42,11 +45,19 @@ namespace Client.View
             this.bangImage = new Bitmap(Properties.Resources.Bang);
             this.bangImage.MakeTransparent(Color.White);
             this.bangImage.MakeTransparent();
+
+            this.backImage = new Bitmap(Properties.Resources.Field);
         }
 
-        public GameForm(ClientModel client) : this()
+        public GameForm(ClientModel? client) : this()
         {
+            if(client == null)
+            {
+                return;
+            }
+
             context = SynchronizationContext.Current;
+
             controller = new FieldController(new Rectangle(0, 0, this.Width - 10, this.Height - 40), client);
             controller.Win += Controller_Win;
             controller.Lost += Controller_Lost;
@@ -60,40 +71,6 @@ namespace Client.View
             thread.Start();
         }
 
-        private void Controller_Lost()
-        {
-            context?.Send(SetLost, null);
-        }
-
-        private void Controller_Win()
-        {
-            context?.Send(SetWin, null);
-        }
-
-        private void SetWin(object? obj)
-        {
-            Label result = new Label();
-            result.Text = "You win!";
-            result.BackColor = Color.Transparent;
-            result.Font = new Font("Segoe UI", 32, FontStyle.Bold);
-            result.Size = new Size(400, 200);
-            result.Location = new Point((this.ClientRectangle.Width - result.Width) / 2, (this.ClientRectangle.Height - result.Height) / 2);
-
-            this.Controls.Add(result);
-        }
-
-        private void SetLost(object? obj)
-        {
-            Label result = new Label();
-            result.Text = "You lost (((";
-            result.BackColor = Color.Transparent;
-            result.Font = new Font("Segoe UI", 32, FontStyle.Bold);
-            result.Size = new Size(400, 200);
-            result.Location = new Point((this.ClientRectangle.Width - result.Width) / 2, (this.ClientRectangle.Height - result.Height) / 2);
-
-            this.Controls.Add(result);
-        }
-
         private void Drawing()
         {
             while (true)
@@ -105,19 +82,16 @@ namespace Client.View
 
                 this.graphics.Clear(this.BackColor);
 
+                graphics.DrawImage(backImage, 0, 0);
+
                 for (int i = 0; i < controller.TankMen.Count; i++)
                 {
-                    DrawTank(controller.TankMen[i].Tank);
-                    graphics.DrawString(controller.TankMen[i].Name, new Font("Segoe UI", 15), Brushes.Green, new Point(
-                        controller.TankMen[i].Tank.Location.X, controller.TankMen[i].Tank.Location.Y + controller.TankMen[i].Tank.Size.Height + 5));
-
-                    graphics.DrawString(controller.TankMen[i].Tank.Health.ToString(), new Font("Segoe UI", 15), Brushes.Green, new Point(
-                        controller.TankMen[i].Tank.Location.X, controller.TankMen[i].Tank.Location.Y - 50));
-
                     if (controller.TankMen[i].Tank == null)
                     {
                         continue;
                     }
+
+                    DrawTank(controller.TankMen[i].Tank, controller.TankMen[i].Name);
 
                     if (controller.TankMen[i].Tank!.IsFire)
                     {
@@ -125,13 +99,14 @@ namespace Client.View
                         {
                             continue;
                         }
+
                         if (fireCount[i] < 3)
                         {
                             DrawFire(controller.TankMen[i].Tank!, fireCount[i]);
                             fireCount[i]++;
                         }
 
-                        this.graphics.FillEllipse(Brushes.Black, new Rectangle(controller.TankMen[i].Tank!.Bullet!.Location, new Size(7, 7)));
+                        this.graphics.FillEllipse(Brushes.Red, new Rectangle(controller.TankMen[i].Tank!.Bullet!.Location, new Size(7, 7)));
                     }
                     else
                     {
@@ -171,7 +146,7 @@ namespace Client.View
             this.graphics.FillEllipse(Brushes.Red, new Rectangle(center, new Size(width, height)));
         }
 
-        private void DrawTank(TankModel? tank)
+        private void DrawTank(TankModel? tank, string? name)
         {
             if (tank == null)
             {
@@ -188,7 +163,21 @@ namespace Client.View
                 this.graphics.DrawImage(deadTankImage, tank.Rectangle,
                     tank.ImageBounds, GraphicsUnit.Pixel);
             }
+
+            SizeF size;
+
+            if (name != null)
+            {               
+                size = graphics.MeasureString(name, font);
+                graphics.DrawString(name, font, Brushes.White, 
+                    new Point(tank.Location.X + (tank.Size.Width - (int)size.Width) / 2, tank.Location.Y + tank.Size.Height + 5));
+            }
+
+            size = graphics.MeasureString(tank.Health.ToString(), font);
+            graphics.DrawString(tank.Health.ToString(), font, Brushes.White, 
+                new Point(tank.Location.X + (tank.Size.Width - (int)size.Width) / 2, tank.Location.Y - 50));
         }
+
         private void DrawBang(TankModel? tank, int k)
         {
             if(tank == null)
@@ -234,6 +223,37 @@ namespace Client.View
         private void GameForm_FormClosing(object sender, FormClosingEventArgs e)
         {
             controller?.Close();
+            Owner.Show();
+        }
+
+        private void Controller_Lost()
+        {
+            context?.Send(SetLost, null);
+        }
+
+        private void Controller_Win()
+        {
+            context?.Send(SetWin, null);
+        }
+
+        private void SetWin(object? obj)
+        {
+            resultLabel.Text = "You win!";
+            resultLabel.Visible = true;
+            backButton.Visible = true;
+        }
+
+        private void SetLost(object? obj)
+        {
+            resultLabel.Text = "You lost (((";
+            resultLabel.Visible = true;
+            backButton.Visible = true;
+        }
+
+        private void backButton_Click(object sender, EventArgs e)
+        {
+            Owner.Show();
+            this.Close();
         }
     }
 }

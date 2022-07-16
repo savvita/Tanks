@@ -14,6 +14,10 @@ namespace Client.Model
         /// </summary>
         public string? Name { get; set; }
 
+        public int TotalGames { get; set; }
+
+        public int WonGames { get; set; }
+
         /// <summary>
         /// Connect to the server
         /// </summary>

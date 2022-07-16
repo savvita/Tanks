@@ -154,6 +154,30 @@ namespace Server.Model
             return 0;
         }
 
+        public int GetTotalGames(string? name)
+        {
+            UserModel? user = GetUserByName(name);
+
+            if (user != null)
+            {
+                return user.TotalGames;
+            }
+
+            return 0;
+        }
+
+        public int GetWonGames(string? name)
+        {
+            UserModel? user = GetUserByName(name);
+
+            if (user != null)
+            {
+                return user.TotalWins;
+            }
+
+            return 0;
+        }
+
         /// <summary>
         /// Find user by name
         /// </summary>

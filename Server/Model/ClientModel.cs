@@ -97,7 +97,7 @@ namespace Server.Model
 
                     else if(msg.Equals(SocketClient.StartCode))
                     {
-                        server.AddClient(this);
+                        user.TotalGames++;
 
                         int width = int.Parse(SocketClient.ReceiveMessage(Stream));
                         int height = int.Parse(SocketClient.ReceiveMessage(Stream));

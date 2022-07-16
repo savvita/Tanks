@@ -145,6 +145,7 @@ namespace Server.Model
                         {
                             SocketClient.SendMessage(stream, SocketClient.OkCode);
                             ClientModel client = new ClientModel(user, tcpClient, this);
+                            clients?.Add(client);
 
                             AcceptClient(cols[0], stream);
                             client.Proceed();
@@ -159,21 +160,30 @@ namespace Server.Model
                         string authorization = SocketClient.ReceiveMessage(stream);
 
                         string[] cols = authorization.Split(',');
+                        ClientModel? activeClient = GetClientByName(cols[0]);
 
-                        UserModel? user = users.GetUserByName(cols[0]);
-
-                        if (user != null)
+                        if (activeClient != null)
                         {
-                            SocketClient.SendMessage(stream, SocketClient.OkCode);
-                            ClientModel client = new ClientModel(user, tcpClient, this);
-
-                            AcceptClient(cols[0], stream);
-
-                            client?.Proceed();
+                            SocketClient.SendMessage(stream, SocketClient.FailCode);
                         }
                         else
                         {
-                            SocketClient.SendMessage(stream, SocketClient.FailCode);
+                            UserModel? user = users.GetUserByName(cols[0]);
+
+                            if (user != null)
+                            {
+                                SocketClient.SendMessage(stream, SocketClient.OkCode);
+                                ClientModel client = new ClientModel(user, tcpClient, this);
+                                clients?.Add(client);
+
+                                AcceptClient(cols[0], stream);
+
+                                client?.Proceed();
+                            }
+                            else
+                            {
+                                SocketClient.SendMessage(stream, SocketClient.FailCode);
+                            }
                         }
                     }
                 }
@@ -195,14 +205,13 @@ namespace Server.Model
             {
                 return;
             }
+            int games = users.GetTotalGames(name);
+            SocketClient.SendMessage(stream, games.ToString());
 
+            int won = users.GetWonGames(name);
+            SocketClient.SendMessage(stream, won.ToString());
 
-            int coins = users.GetCoins(name);
-            SocketClient.SendMessage(stream, coins.ToString());
-            SocketClient.SendMessage(stream, GlobalSettings.Health.ToString());
-            SocketClient.SendMessage(stream, GlobalSettings.Damage.ToString());
-
-            users.SetTotalGames(name);
+            //users.SetTotalGames(name);
         }
 
         /// <summary>
@@ -358,45 +367,6 @@ namespace Server.Model
             session.JoinBattle(client.Tankman, width, height);
         }
 
-        ///// <summary>
-        ///// Handle battle with new data
-        ///// </summary>
-        ///// <param name="msg">Data from the client</param>
-        ///// <returns>New data</returns>
-        //public string? HandleBattle(string msg)
-        //{
-        //    try
-        //    {
-        //        List<TankManModel>? tankmen = JsonSerializer.Deserialize<List<TankManModel>>(msg);
-
-        //        if(tankmen != null)
-        //        {
-        //            battlefield.Tankmen = tankmen;
-        //            battlefield.HandleBattle();
-
-        //            string? res = JsonSerializer.Serialize<List<TankManModel>>(battlefield.Tankmen);
-
-        //            return res;
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        OnGotError($"[{DateTime.Now}] : {ex.Message}");
-        //    }
-
-        //    return null;
-        //}
-
-        //public void SendTanks()
-        //{
-        //    string? msg = JsonSerializer.Serialize<List<TankManModel>>(battlefield.Tankmen);
-        //    BroadcastMessage("", msg);
-        //}
-
-        /// <summary>
-        /// Raise an event GotError
-        /// </summary>
-        /// <param name="message">Error message</param>
         public void OnGotError(string message)
         {
             GotError?.Invoke(message);

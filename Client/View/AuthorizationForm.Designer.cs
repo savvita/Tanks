@@ -30,6 +30,7 @@
         {
             this.tabControl = new System.Windows.Forms.TabControl();
             this.loginPage = new System.Windows.Forms.TabPage();
+            this.errorLabel = new System.Windows.Forms.Label();
             this.cancelButton = new System.Windows.Forms.Button();
             this.loginButton = new System.Windows.Forms.Button();
             this.passwordTextBox = new System.Windows.Forms.TextBox();
@@ -37,9 +38,10 @@
             this.loginTextBox = new System.Windows.Forms.TextBox();
             this.nameLabel = new System.Windows.Forms.Label();
             this.registerPage = new System.Windows.Forms.TabPage();
+            this.errorRegLabel = new System.Windows.Forms.Label();
             this.confirmPasswordTextBox = new System.Windows.Forms.TextBox();
             this.confirmPassLabel = new System.Windows.Forms.Label();
-            this.button1 = new System.Windows.Forms.Button();
+            this.cancelRegButton = new System.Windows.Forms.Button();
             this.registerButton = new System.Windows.Forms.Button();
             this.passwordRegTextBox = new System.Windows.Forms.TextBox();
             this.passwordRegLabel = new System.Windows.Forms.Label();
@@ -54,7 +56,7 @@
             // 
             this.tabControl.Controls.Add(this.loginPage);
             this.tabControl.Controls.Add(this.registerPage);
-            this.tabControl.Location = new System.Drawing.Point(10, 9);
+            this.tabControl.Location = new System.Drawing.Point(-1, -3);
             this.tabControl.Name = "tabControl";
             this.tabControl.SelectedIndex = 0;
             this.tabControl.Size = new System.Drawing.Size(505, 215);
@@ -62,6 +64,8 @@
             // 
             // loginPage
             // 
+            this.loginPage.BackColor = System.Drawing.Color.White;
+            this.loginPage.Controls.Add(this.errorLabel);
             this.loginPage.Controls.Add(this.cancelButton);
             this.loginPage.Controls.Add(this.loginButton);
             this.loginPage.Controls.Add(this.passwordTextBox);
@@ -74,7 +78,15 @@
             this.loginPage.Size = new System.Drawing.Size(497, 187);
             this.loginPage.TabIndex = 0;
             this.loginPage.Text = "Login";
-            this.loginPage.UseVisualStyleBackColor = true;
+            // 
+            // errorLabel
+            // 
+            this.errorLabel.AutoSize = true;
+            this.errorLabel.Location = new System.Drawing.Point(16, 149);
+            this.errorLabel.Name = "errorLabel";
+            this.errorLabel.Size = new System.Drawing.Size(176, 15);
+            this.errorLabel.TabIndex = 15;
+            this.errorLabel.Text = "* Only letters, digits or _ allowed";
             // 
             // cancelButton
             // 
@@ -103,6 +115,7 @@
             this.passwordTextBox.PasswordChar = '*';
             this.passwordTextBox.Size = new System.Drawing.Size(355, 23);
             this.passwordTextBox.TabIndex = 3;
+            this.passwordTextBox.TextChanged += new System.EventHandler(this.loginPage_TextChanged);
             // 
             // passwordLabel
             // 
@@ -119,6 +132,7 @@
             this.loginTextBox.Name = "loginTextBox";
             this.loginTextBox.Size = new System.Drawing.Size(355, 23);
             this.loginTextBox.TabIndex = 1;
+            this.loginTextBox.TextChanged += new System.EventHandler(this.loginPage_TextChanged);
             // 
             // nameLabel
             // 
@@ -131,9 +145,10 @@
             // 
             // registerPage
             // 
+            this.registerPage.Controls.Add(this.errorRegLabel);
             this.registerPage.Controls.Add(this.confirmPasswordTextBox);
             this.registerPage.Controls.Add(this.confirmPassLabel);
-            this.registerPage.Controls.Add(this.button1);
+            this.registerPage.Controls.Add(this.cancelRegButton);
             this.registerPage.Controls.Add(this.registerButton);
             this.registerPage.Controls.Add(this.passwordRegTextBox);
             this.registerPage.Controls.Add(this.passwordRegLabel);
@@ -147,6 +162,15 @@
             this.registerPage.Text = "Register";
             this.registerPage.UseVisualStyleBackColor = true;
             // 
+            // errorRegLabel
+            // 
+            this.errorRegLabel.AutoSize = true;
+            this.errorRegLabel.Location = new System.Drawing.Point(16, 149);
+            this.errorRegLabel.Name = "errorRegLabel";
+            this.errorRegLabel.Size = new System.Drawing.Size(176, 15);
+            this.errorRegLabel.TabIndex = 14;
+            this.errorRegLabel.Text = "* Only letters, digits or _ allowed";
+            // 
             // confirmPasswordTextBox
             // 
             this.confirmPasswordTextBox.Location = new System.Drawing.Point(124, 99);
@@ -154,6 +178,7 @@
             this.confirmPasswordTextBox.PasswordChar = '*';
             this.confirmPasswordTextBox.Size = new System.Drawing.Size(355, 23);
             this.confirmPasswordTextBox.TabIndex = 11;
+            this.confirmPasswordTextBox.TextChanged += new System.EventHandler(this.registerPage_TextChanged);
             // 
             // confirmPassLabel
             // 
@@ -164,15 +189,15 @@
             this.confirmPassLabel.TabIndex = 12;
             this.confirmPassLabel.Text = "Confirm password";
             // 
-            // button1
+            // cancelRegButton
             // 
-            this.button1.Location = new System.Drawing.Point(405, 145);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(75, 23);
-            this.button1.TabIndex = 13;
-            this.button1.Text = "Cancel";
-            this.button1.UseVisualStyleBackColor = true;
-            this.button1.Click += new System.EventHandler(this.cancelButton_Click);
+            this.cancelRegButton.Location = new System.Drawing.Point(405, 145);
+            this.cancelRegButton.Name = "cancelRegButton";
+            this.cancelRegButton.Size = new System.Drawing.Size(75, 23);
+            this.cancelRegButton.TabIndex = 13;
+            this.cancelRegButton.Text = "Cancel";
+            this.cancelRegButton.UseVisualStyleBackColor = true;
+            this.cancelRegButton.Click += new System.EventHandler(this.cancelButton_Click);
             // 
             // registerButton
             // 
@@ -191,6 +216,7 @@
             this.passwordRegTextBox.PasswordChar = '*';
             this.passwordRegTextBox.Size = new System.Drawing.Size(355, 23);
             this.passwordRegTextBox.TabIndex = 9;
+            this.passwordRegTextBox.TextChanged += new System.EventHandler(this.registerPage_TextChanged);
             // 
             // passwordRegLabel
             // 
@@ -207,6 +233,7 @@
             this.loginRegTextBox.Name = "loginRegTextBox";
             this.loginRegTextBox.Size = new System.Drawing.Size(355, 23);
             this.loginRegTextBox.TabIndex = 7;
+            this.loginRegTextBox.TextChanged += new System.EventHandler(this.registerPage_TextChanged);
             // 
             // loginRegLabel
             // 
@@ -219,9 +246,12 @@
             // 
             // AuthorizationForm
             // 
+            this.AcceptButton = this.loginButton;
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(516, 224);
+            this.BackColor = System.Drawing.SystemColors.Control;
+            this.CancelButton = this.cancelButton;
+            this.ClientSize = new System.Drawing.Size(504, 213);
             this.Controls.Add(this.tabControl);
             this.Name = "AuthorizationForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
@@ -248,11 +278,13 @@
         private TabPage registerPage;
         private TextBox confirmPasswordTextBox;
         private Label confirmPassLabel;
-        private Button button1;
+        private Button cancelRegButton;
         private Button registerButton;
         private TextBox passwordRegTextBox;
         private Label passwordRegLabel;
         private TextBox loginRegTextBox;
         private Label loginRegLabel;
+        private Label errorLabel;
+        private Label errorRegLabel;
     }
 }
