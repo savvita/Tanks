@@ -1,5 +1,6 @@
 ﻿using Client.Controller;
 using Client.Model;
+using TankLibrary;
 
 namespace Client.View
 {
@@ -13,7 +14,13 @@ namespace Client.View
         private Graphics graphics;
         #endregion
 
-        private FieldController controller;
+        private FieldController? controller;
+
+        private SynchronizationContext? context;
+
+        private int[] fireCount = new int[5];
+        private int[] bangCount = new int[5];
+
         public GameForm()
         {
             InitializeComponent();
@@ -35,21 +42,15 @@ namespace Client.View
             this.bangImage = new Bitmap(Properties.Resources.Bang);
             this.bangImage.MakeTransparent(Color.White);
             this.bangImage.MakeTransparent();
-
-            
-
-
         }
 
         public GameForm(ClientModel client) : this()
         {
             context = SynchronizationContext.Current;
             controller = new FieldController(new Rectangle(0, 0, this.Width - 10, this.Height - 40), client);
-            controller.TankController.Tank.Name = client.Name;
-            controller.Lost += Controller_Lost;
             controller.Win += Controller_Win;
+            controller.Win += Controller_Lost;
             controller.Connect();
-
 
             Thread thread = new Thread(Drawing)
             {
@@ -61,13 +62,12 @@ namespace Client.View
 
         private void Controller_Lost()
         {
-            context.Send(SetLost, null);
+            context?.Send(SetLost, null);
         }
 
         private void Controller_Win()
         {
-
-            context.Send(SetWin, null);
+            context?.Send(SetWin, null);
         }
 
         private void SetWin(object? obj)
@@ -92,188 +92,62 @@ namespace Client.View
             this.Controls.Add(result);
         }
 
-        private SynchronizationContext context;
-
-        //public GameForm(string name) : this()
-        //{
-        //    controller.TankController.Tank.Name = name;
-        //    controller.Connect();
-        //}
-
-        //public GameForm(FieldController controller) : this()
-        //{
-        //    //this.controller = controller;
-        //    //this.controller.TankController.FieldBounds = new Rectangle(0, 0, this.Width - 10, this.Height - 40);
-
-        //    this.tankImage = new Bitmap(Properties.Resources.Tank);
-        //    this.tankImage.MakeTransparent(Color.White);
-        //    this.tankImage.MakeTransparent();
-
-        //    //this.fireImage = new Bitmap(Properties.Resources.Fire);
-        //    //this.fireImage.MakeTransparent(Color.White);
-        //    //this.fireImage.MakeTransparent(Color.FromArgb(238, 238, 238));
-
-        //    Thread thread = new Thread(Drawing)
-        //    {
-        //        IsBackground = true
-        //    };
-
-        //    thread.Start();
-        //}
-
-        private int[] fireCount = new int[5];
-        private int[] bangCount = new int[5];
-
-        private int fireTankCount = 0;
-        private int bangTankCount = 0;
-
         private void Drawing()
         {
-            //int fireCount = 0;
-            //int fireEnemyCount = 0;
-            //int bangCount = 0;
-            //int bangEnemyCount = 0;
-
-
             while (true)
             {
+                if(controller == null || controller.TankMen == null)
+                {
+                    continue;
+                }
+
                 this.graphics.Clear(this.BackColor);
 
-                DrawTank(controller.TankController.Tank);
-
-                if (controller.Enemies != null)
+                for (int i = 0; i < controller.TankMen.Count; i++)
                 {
-                    for (int i = 0; i < controller.Enemies.Count; i++)
+                    DrawTank(controller.TankMen[i].Tank);
+                    graphics.DrawString(controller.TankMen[i].Name, new Font("Segoe UI", 15), Brushes.Green, new Point(
+                        controller.TankMen[i].Tank.Location.X, controller.TankMen[i].Tank.Location.Y + controller.TankMen[i].Tank.Size.Height + 5));
+
+                    if (controller.TankMen[i].Tank == null)
                     {
-                        DrawTank(controller.Enemies[i]);
-
-                        if (controller.Enemies[i].IsFire)
-                        {
-                            if (fireCount[i] < 3)
-                            {
-                                DrawFire(controller.Enemies[i], fireCount[i]);
-                                fireCount[i]++;
-                            }
-
-                            this.graphics.FillEllipse(Brushes.Black, new Rectangle(controller.Enemies[i].Bullet.Location, new Size(7, 7)));
-                        }
-                        else
-                        {
-                            fireCount[i] = 0;
-                        }
-
-                        if (controller.Enemies[i].IsHit)
-                        {
-                            if (bangCount[i] < 3)
-                            {
-                                DrawBang(controller.Enemies[i], bangCount[i]);
-
-                                bangCount[i]++;
-                            }
-                            else
-                            {
-                                bangCount[i] = 0;
-                                controller.Enemies[i].IsHit = false;
-                            }
-                        }
-                    }
-                }
-
-                if (controller.TankController.Tank.IsFire)
-                {
-                    if (fireTankCount < 3)
-                    {
-                        DrawFire(controller.TankController.Tank, fireTankCount);
-                        fireTankCount++;
+                        continue;
                     }
 
-                    this.graphics.FillEllipse(Brushes.Black, new Rectangle(controller.TankController.Tank.Bullet.Location, new Size(7, 7)));
-                }
-                else
-                {
-                    fireTankCount = 0;
-                }
-
-                if (controller.TankController.Tank.IsHit)
-                {
-                    if (bangTankCount < 3)
+                    if (controller.TankMen[i].Tank!.IsFire)
                     {
-                        DrawBang(controller.TankController.Tank, bangTankCount);
-                        bangTankCount++;
+                        if(controller.TankMen[i].Tank!.Bullet == null)
+                        {
+                            continue;
+                        }
+                        if (fireCount[i] < 3)
+                        {
+                            DrawFire(controller.TankMen[i].Tank!, fireCount[i]);
+                            fireCount[i]++;
+                        }
+
+                        this.graphics.FillEllipse(Brushes.Black, new Rectangle(controller.TankMen[i].Tank!.Bullet!.Location, new Size(7, 7)));
                     }
                     else
                     {
-                        bangTankCount = 0;
-                        controller.TankController.Tank.IsHit = false;
+                        fireCount[i] = 0;
+                    }
+
+                    if (controller.TankMen[i].Tank!.IsHit)
+                    {
+                        if (bangCount[i] < 3)
+                        {
+                            DrawBang(controller.TankMen[i].Tank, bangCount[i]);
+
+                            bangCount[i]++;
+                        }
+                        else
+                        {
+                            bangCount[i] = 0;
+                            controller.TankMen[i].Tank!.IsHit = false;
+                        }
                     }
                 }
-
-                //===================================
-                //if (controller.Enemy != null)
-                //{
-                //    DrawTank(controller.Enemy);
-
-                //    if (controller.Enemy.IsFire)
-                //    {
-                //        if (fireEnemyCount < 3)
-                //        {
-                //            DrawFire(controller.Enemy, fireEnemyCount);
-                //            fireEnemyCount++;
-                //        }
-
-                //        this.graphics.FillEllipse(Brushes.Black, new Rectangle(controller.Enemy.Bullet.Location, new Size(7, 7)));
-                //    }
-                //    else
-                //    {
-                //        fireEnemyCount = 0;
-                //    }
-
-                //    if (controller.Enemy.IsHit)
-                //    {
-                //        if (bangEnemyCount < 3)
-                //        {
-                //            DrawBang(controller.Enemy, bangEnemyCount);
-
-                //            bangEnemyCount++;
-                //        }
-                //        else
-                //        {
-                //            bangEnemyCount = 0;
-                //            controller.Enemy.IsHit = false;
-                //        }
-                //    }
-                //}
-
-                //if (controller.TankController.Tank.IsFire)
-                //{
-                //    if (fireCount < 3)
-                //    {
-                //        DrawFire(controller.TankController.Tank, fireCount);
-                //        fireCount++;
-                //    }
-
-                //    this.graphics.FillEllipse(Brushes.Black, new Rectangle(controller.TankController.Tank.Bullet.Location, new Size(7, 7)));
-                //}
-                //else
-                //{
-                //    fireCount = 0;
-                //}
-
-                //if (controller.TankController.Tank.IsHit)
-                //{
-                //    if (bangCount < 3)
-                //    {
-                //        DrawBang(controller.TankController.Tank, bangCount);
-                //        bangCount++;
-                //    }
-                //    else
-                //    {
-                //        bangCount = 0;
-                //        controller.TankController.Tank.IsHit = false;
-                //    }
-                //}
-
-
 
                 this.BackgroundImage = bufferedImage;
                 this.Invalidate();
@@ -292,26 +166,36 @@ namespace Client.View
             this.graphics.FillEllipse(Brushes.Red, new Rectangle(center, new Size(width, height)));
         }
 
-        private void DrawTank(TankModel tank)
+        private void DrawTank(TankModel? tank)
         {
+            if (tank == null)
+            {
+                return;
+            }
+
             if (tank.IsAlive)
             {
-                this.graphics.DrawImage(tankImage, tank.TankRectangle,
-                    tank.TankImageBounds, GraphicsUnit.Pixel);
+                this.graphics.DrawImage(tankImage, tank.Rectangle,
+                    tank.ImageBounds, GraphicsUnit.Pixel);
             }
             else
             {
-                this.graphics.DrawImage(deadTankImage, tank.TankRectangle,
-                    tank.TankImageBounds, GraphicsUnit.Pixel);
+                this.graphics.DrawImage(deadTankImage, tank.Rectangle,
+                    tank.ImageBounds, GraphicsUnit.Pixel);
             }
         }
-        private void DrawBang(TankModel tank, int k)
+        private void DrawBang(TankModel? tank, int k)
         {
+            if(tank == null)
+            {
+                return;
+            }
+
             int width = 15 * (k + 1);
             int height = 15 * (k + 1);
 
-            Point center = new Point(tank.Location.X + tank.TankRectangle.Width / 2 - width / 2,
-                tank.Location.Y + tank.TankRectangle.Height / 2 - height / 2);
+            Point center = new Point(tank.Location.X + tank.Rectangle.Width / 2 - width / 2,
+                tank.Location.Y + tank.Rectangle.Height / 2 - height / 2);
 
             this.graphics.DrawImage(bangImage,
                                 new Rectangle(center, new Size(width, height)),
@@ -322,29 +206,29 @@ namespace Client.View
         {
             if(e.KeyCode == Keys.Left)
             {
-                controller.Move(Directions.Left);
+                controller?.Move(Directions.Left);
             }
             else if(e.KeyCode == Keys.Right)
             {
-                controller.Move(Directions.Right);
+                controller?.Move(Directions.Right);
             }
             else if (e.KeyCode == Keys.Up)
             {
-                controller.Move(Directions.Up);
+                controller?.Move(Directions.Up);
             }
             else if (e.KeyCode == Keys.Down)
             {
-                controller.Move(Directions.Down);
+                controller?.Move(Directions.Down);
             }
-            else if(e.KeyCode == Keys.Space)
+            else if (e.KeyCode == Keys.Space)
             {
-                controller.TankController.Fire();
+                controller?.Fire();
             }
         }
 
-        private void GameForm_MouseClick(object sender, MouseEventArgs e)
+        private void GameForm_FormClosing(object sender, FormClosingEventArgs e)
         {
-            //controller.TankController.Fire();
+            controller?.Close();
         }
     }
 }

@@ -1,144 +1,207 @@
 ﻿using Client.Model;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using TankLibrary;
 
 namespace Client.Controller
 {
     public class TankController
     {
-        public TankModel Tank { get; set; }
+        private Func<Point, Rectangle>? currentMove;
 
+        public TankManModel TankMan { get; }
+
+        /// <summary>
+        /// Bounds of the field
+        /// </summary>
         public Rectangle FieldBounds { get; set; }
 
         /// <summary>
         /// Describe sprite image this tank
         /// </summary>
-        public SpriteImageModel SpriteImage { get; protected set; }
-
-
+        public SpriteImageModel? SpriteImage { get; private set; }
 
         public TankController(SpriteImageModel spriteImage)
         {
-            Tank = new TankModel();
-            Tank.Bullet = new BulletModel();
+            TankMan = new TankManModel();
+            TankMan.Tank = new TankModel();
+
+            TankMan.Tank.IsAlive = true;
+            TankMan.Tank.Bullet = new TankLibrary.BulletModel();
 
             SpriteImage = spriteImage;
 
-            Tank.Image = SpriteImage.Image;
-            Tank.Image.MakeTransparent();
+            TankMan.Tank.Size = new Size(SpriteImage.MovingRightImageBounds.Width / 4, SpriteImage.MovingRightImageBounds.Height / 4);
 
-            Tank.Size = new Size(SpriteImage.MovingRightImageBounds.Width / 4, SpriteImage.MovingRightImageBounds.Height / 4);
-
-            Tank.TankImageBounds = SpriteImage.MovingRightImageBounds.Rectangle;
+            TankMan.Tank.ImageBounds = SpriteImage.MovingRightImageBounds.Rectangle;
             currentMove = MoveRight;
 
-            Tank.Muzzle = new Point(Tank.Location.X + Tank.Size.Width, Tank.Location.Y + Tank.Size.Height / 2);
+            TankMan.Tank.Muzzle = new Point(TankMan.Tank.Location.X + TankMan.Tank.Size.Width, TankMan.Tank.Location.Y + TankMan.Tank.Size.Height / 2);
 
-            Tank.Bullet.Location = Tank.Muzzle;
-
+            if (TankMan.Tank.Bullet != null)
+            {
+                TankMan.Tank.Bullet.Location = TankMan.Tank.Muzzle;
+            }
         }
 
-        private Func<Point, Rectangle> currentMove;
+        
+        /// <summary>
+        /// Make a fire
+        /// </summary>
+        //public void Fire()
+        //{
+        //    if (TankMan.Tank == null || TankMan.Tank.Bullet == null)
+        //    {
+        //        return;
+        //    }
 
-        public void Fire()
+        //    if (TankMan.Tank.IsFire || !TankMan.Tank.IsAlive)
+        //    {
+        //        return;
+        //    }
+
+        //    TankMan.Tank.IsFire = true;
+        //    TankMan.Tank.Bullet.IsFlying = true;
+
+        //    if (currentMove == MoveRight)
+        //    {
+        //        MoveBullet(TankMan.Tank.Bullet.MoveRight);
+        //    }
+        //    else if (currentMove == MoveLeft)
+        //    {
+        //        MoveBullet(TankMan.Tank.Bullet.MoveLeft);
+        //    }
+        //    else if (currentMove == MoveUp)
+        //    {
+        //        MoveBullet(TankMan.Tank.Bullet.MoveUp);
+        //    }
+        //    else if (currentMove == MoveDown)
+        //    {
+        //        MoveBullet(TankMan.Tank.Bullet.MoveDown);
+        //    }
+        //}
+
+        public Action? GetFireMoving()
         {
-            if (Tank.IsFire || !Tank.IsAlive)
+            if (TankMan.Tank == null || TankMan.Tank.Bullet == null)
             {
-                return;
+                return null;
             }
 
-            Tank.IsFire = true;
-            Tank.Bullet.IsFlying = true;
+            if (TankMan.Tank.IsFire || !TankMan.Tank.IsAlive)
+            {
+                return null;
+            }
+
+            TankMan.Tank.IsFire = true;
+            TankMan.Tank.Bullet.IsFlying = true;
 
             if (currentMove == MoveRight)
             {
-                MoveBullet(Tank.Bullet.MoveRight);
+                return TankMan.Tank.Bullet.MoveRight;
             }
             else if (currentMove == MoveLeft)
             {
-                MoveBullet(Tank.Bullet.MoveLeft);
+                return TankMan.Tank.Bullet.MoveLeft;
             }
             else if (currentMove == MoveUp)
             {
-                MoveBullet(Tank.Bullet.MoveUp);
+                return TankMan.Tank.Bullet.MoveUp;
             }
             else if (currentMove == MoveDown)
             {
-                MoveBullet(Tank.Bullet.MoveDown);
+                return TankMan.Tank.Bullet.MoveDown;
             }
+
+            return null;
         }
 
-        private void MoveBullet(Action move)
-        {
-            Task.Factory.StartNew(() =>
-            {
-                while (FieldBounds.Contains(Tank.Bullet.Location))
-                {
-                    if (!Tank.Bullet.IsFlying)
-                    {
-                        break;
-                    }
+        /// <summary>
+        /// Move the bullet
+        /// </summary>
+        /// <param name="move">Function describing a movement of the bullet</param>
+        //private void MoveBullet(Action move)
+        //{
+        //    if(TankMan.Tank == null || TankMan.Tank.Bullet == null)
+        //    {
+        //        return;
+        //    }
 
-                    move();
-                    Thread.Sleep(100);
-                }
+        //    Task.Factory.StartNew(() =>
+        //    {
+        //        while (FieldBounds.Contains(TankMan.Tank.Bullet.Location))
+        //        {
+        //            if (!TankMan.Tank.Bullet.IsFlying)
+        //            {
+        //                break;
+        //            }
 
-                Tank.IsFire = false;
-                Tank.Bullet.IsFlying = false;
-                Tank.Bullet.Location = Tank.Muzzle;
+        //            move();
+        //            Thread.Sleep(100);
+        //        }
 
-            });
-        }
+        //        TankMan.Tank.IsFire = false;
+        //        TankMan.Tank.Bullet.IsFlying = false;
+        //        TankMan.Tank.Bullet.Location = TankMan.Tank.Muzzle;
 
+        //    });
+        //}
+
+        /// <summary>
+        /// Get the next location of the tank
+        /// </summary>
+        /// <param name="direction">Direction of the moving</param>
+        /// <returns>New location</returns>
         public Point GetNextLocation(Directions direction)
         {
             Point point = new Point();
+
+            if(TankMan.Tank == null)
+            {
+                return point;
+            }
+
             switch(direction)
             {
                 case Directions.Left:
-                    if (Tank.Location.X - Tank.Speed >= FieldBounds.Location.X)
+                    if (TankMan.Tank.Location.X - TankMan.Tank.Speed >= FieldBounds.Location.X)
                     {
-                        point = new Point(Tank.Location.X - Tank.Speed, Tank.Location.Y);
+                        point = new Point(TankMan.Tank.Location.X - TankMan.Tank.Speed, TankMan.Tank.Location.Y);
                     }
                     else
                     {
-                        point = new Point(FieldBounds.Location.X, Tank.Location.Y);
+                        point = new Point(FieldBounds.Location.X, TankMan.Tank.Location.Y);
                     }
                     break;
 
                 case Directions.Right:
-                    if (Tank.Location.X + Tank.Speed + Tank.Size.Width <= FieldBounds.Location.X + FieldBounds.Width)
+                    if (TankMan.Tank.Location.X + TankMan.Tank.Speed + TankMan.Tank.Size.Width <= FieldBounds.Location.X + FieldBounds.Width)
                     {
-                        point = new Point(Tank.Location.X + Tank.Speed, Tank.Location.Y);
+                        point = new Point(TankMan.Tank.Location.X + TankMan.Tank.Speed, TankMan.Tank.Location.Y);
                     }
                     else
                     {
-                        point = new Point(FieldBounds.Location.X + FieldBounds.Width - Tank.Size.Width, Tank.Location.Y);
+                        point = new Point(FieldBounds.Location.X + FieldBounds.Width - TankMan.Tank.Size.Width, TankMan.Tank.Location.Y);
                     }
                     break;
 
                 case Directions.Up:
-                    if (Tank.Location.Y - Tank.Speed >= FieldBounds.Location.Y)
+                    if (TankMan.Tank.Location.Y - TankMan.Tank.Speed >= FieldBounds.Location.Y)
                     {
-                        point = new Point(Tank.Location.X, Tank.Location.Y - Tank.Speed);
+                        point = new Point(TankMan.Tank.Location.X, TankMan.Tank.Location.Y - TankMan.Tank.Speed);
                     }
                     else
                     {
-                        point = new Point(Tank.Location.X, FieldBounds.Location.Y);
+                        point = new Point(TankMan.Tank.Location.X, FieldBounds.Location.Y);
                     }
                     break;
 
                 case Directions.Down:
-                    if (Tank.Location.Y + Tank.Speed + Tank.Size.Height <= FieldBounds.Location.Y + FieldBounds.Height)
+                    if (TankMan.Tank.Location.Y + TankMan.Tank.Speed + TankMan.Tank.Size.Height <= FieldBounds.Location.Y + FieldBounds.Height)
                     {
-                        point = new Point(Tank.Location.X, Tank.Location.Y + Tank.Speed);
+                        point = new Point(TankMan.Tank.Location.X, TankMan.Tank.Location.Y + TankMan.Tank.Speed);
                     }
                     else
                     {
-                        point = new Point(Tank.Location.X, FieldBounds.Location.Y + FieldBounds.Height - Tank.Size.Height);
+                        point = new Point(TankMan.Tank.Location.X, FieldBounds.Location.Y + FieldBounds.Height - TankMan.Tank.Size.Height);
                     }
                     break;
             }
@@ -146,26 +209,45 @@ namespace Client.Controller
             return point;
         }
 
+        /// <summary>
+        /// Move a tank to the left
+        /// </summary>
+        /// <param name="location">New location</param>
+        /// <returns>New rectangle of the tank</returns>
         public Rectangle MoveLeft(Point location)
         {
-            if (!Tank.IsAlive)
+            if(TankMan.Tank == null)
             {
-                return Tank.TankRectangle;
+                return new Rectangle();
             }
 
-            Tank.Location = location;
-
-            Tank.Size = new Size(SpriteImage.MovingLeftImageBounds.Width / 4, SpriteImage.MovingLeftImageBounds.Height / 4);
-
-            Rectangle rect = SpriteImage.MovingLeftImageBounds.Rectangle;
-
-            Tank.TankImageBounds = rect;
-
-            Tank.Muzzle = new Point(Tank.Location.X, Tank.Location.Y + Tank.Size.Height / 2);
-
-            if (!Tank.IsFire)
+            if (!TankMan.Tank.IsAlive)
             {
-                Tank.Bullet.Location = Tank.Muzzle;
+                return TankMan.Tank.Rectangle;
+            }
+
+            TankMan.Tank.Location = location;
+
+            Rectangle rect;
+
+            if (SpriteImage != null)
+            {
+
+                TankMan.Tank.Size = new Size(SpriteImage.MovingLeftImageBounds.Width / 4, SpriteImage.MovingLeftImageBounds.Height / 4);
+
+                rect = SpriteImage.MovingLeftImageBounds.Rectangle;
+            }
+            else
+            {
+                rect = new Rectangle();
+            }
+
+            TankMan.Tank.ImageBounds = rect;
+            TankMan.Tank.Muzzle = new Point(TankMan.Tank.Location.X, TankMan.Tank.Location.Y + TankMan.Tank.Size.Height / 2);
+
+            if (TankMan.Tank.Bullet != null && !TankMan.Tank.IsFire)
+            {
+                TankMan.Tank.Bullet.Location = TankMan.Tank.Muzzle;
             }
 
             currentMove = MoveLeft;
@@ -173,26 +255,46 @@ namespace Client.Controller
             return rect;
         }
 
+
+        /// <summary>
+        /// Move a tank to the right
+        /// </summary>
+        /// <param name="location">New location</param>
+        /// <returns>New rectangle of the tank</returns>
         public Rectangle MoveRight(Point location)
         {
-            if (!Tank.IsAlive)
+            if (TankMan.Tank == null)
             {
-                return Tank.TankRectangle;
+                return new Rectangle();
             }
 
-            Tank.Location = location;
-
-            Tank.Size = new Size(SpriteImage.MovingRightImageBounds.Width / 4, SpriteImage.MovingRightImageBounds.Height / 4);
-
-            Rectangle rect = SpriteImage.MovingRightImageBounds.Rectangle;
-
-            Tank.TankImageBounds = rect;
-
-            Tank.Muzzle = new Point(Tank.Location.X + Tank.Size.Width, Tank.Location.Y + Tank.Size.Height / 2);
-
-            if (!Tank.IsFire)
+            if (!TankMan.Tank.IsAlive)
             {
-                Tank.Bullet.Location = Tank.Muzzle;
+                return TankMan.Tank.Rectangle;
+            }
+
+            TankMan.Tank.Location = location;
+
+            Rectangle rect;
+
+            if (SpriteImage != null)
+            {
+                TankMan.Tank.Size = new Size(SpriteImage.MovingRightImageBounds.Width / 4, SpriteImage.MovingRightImageBounds.Height / 4);
+
+                rect = SpriteImage.MovingRightImageBounds.Rectangle;
+            }
+            else
+            {
+                rect = new Rectangle();
+            }
+
+            TankMan.Tank.ImageBounds = rect;
+
+            TankMan.Tank.Muzzle = new Point(TankMan.Tank.Location.X + TankMan.Tank.Size.Width, TankMan.Tank.Location.Y + TankMan.Tank.Size.Height / 2);
+
+            if (TankMan.Tank.Bullet != null && !TankMan.Tank.IsFire)
+            {
+                TankMan.Tank.Bullet.Location = TankMan.Tank.Muzzle;
             }
 
             currentMove = MoveRight;
@@ -200,26 +302,45 @@ namespace Client.Controller
             return rect;
         }
 
+        /// <summary>
+        /// Move a tank to the up
+        /// </summary>
+        /// <param name="location">New location</param>
+        /// <returns>New rectangle of the tank</returns>
         public Rectangle MoveUp(Point location)
         {
-            if (!Tank.IsAlive)
+            if (TankMan.Tank == null)
             {
-                return Tank.TankRectangle;
+                return new Rectangle();
             }
 
-            Tank.Location = location;
-
-            Tank.Size = new Size(SpriteImage.MovingUpImageBounds.Width / 4, SpriteImage.MovingUpImageBounds.Height / 4);
-
-            Rectangle rect = SpriteImage.MovingUpImageBounds.Rectangle;
-
-            Tank.TankImageBounds = rect;
-
-            Tank.Muzzle = new Point(Tank.Location.X + Tank.Size.Width / 2, Tank.Location.Y);
-
-            if (!Tank.IsFire)
+            if (!TankMan.Tank.IsAlive)
             {
-                Tank.Bullet.Location = Tank.Muzzle;
+                return TankMan.Tank.Rectangle;
+            }
+
+            TankMan.Tank.Location = location;
+
+            Rectangle rect;
+
+            if (SpriteImage != null)
+            {
+                TankMan.Tank.Size = new Size(SpriteImage.MovingUpImageBounds.Width / 4, SpriteImage.MovingUpImageBounds.Height / 4);
+
+                rect = SpriteImage.MovingUpImageBounds.Rectangle;
+            }
+            else
+            {
+                rect = new Rectangle();
+            }
+
+            TankMan.Tank.ImageBounds = rect;
+
+            TankMan.Tank.Muzzle = new Point(TankMan.Tank.Location.X + TankMan.Tank.Size.Width / 2, TankMan.Tank.Location.Y);
+
+            if (TankMan.Tank.Bullet != null && !TankMan.Tank.IsFire)
+            {
+                TankMan.Tank.Bullet.Location = TankMan.Tank.Muzzle;
             }
 
             currentMove = MoveUp;
@@ -227,32 +348,54 @@ namespace Client.Controller
             return rect;
         }
 
+
+        /// <summary>
+        /// Move a tank to the down
+        /// </summary>
+        /// <param name="location">New location</param>
+        /// <returns>New rectangle of the tank</returns>
         public Rectangle MoveDown(Point location)
         {
-            if (!Tank.IsAlive)
+            if (TankMan.Tank == null)
             {
-                return Tank.TankRectangle;
+                return new Rectangle();
             }
 
-            Tank.Location = location;
-
-            Tank.Size = new Size(SpriteImage.MovingDownImageBounds.Width / 4, SpriteImage.MovingDownImageBounds.Height / 4);
-
-            Rectangle rect = SpriteImage.MovingDownImageBounds.Rectangle;
-
-            Tank.TankImageBounds = rect;
-
-            Tank.Muzzle = new Point(Tank.Location.X + Tank.Size.Width / 2, Tank.Location.Y + Tank.Size.Height);
-
-            if (!Tank.IsFire)
+            if (!TankMan.Tank.IsAlive)
             {
-                Tank.Bullet.Location = Tank.Muzzle;
+                return TankMan.Tank.Rectangle;
+            }
+
+            TankMan.Tank.Location = location;
+
+            Rectangle rect;
+
+            if (SpriteImage != null)
+            {
+
+                TankMan.Tank.Size = new Size(SpriteImage.MovingDownImageBounds.Width / 4, SpriteImage.MovingDownImageBounds.Height / 4);
+
+                rect = SpriteImage.MovingDownImageBounds.Rectangle;
+            }
+            else
+            {
+                rect = new Rectangle();
+            }
+
+            TankMan.Tank.ImageBounds = rect;
+
+            TankMan.Tank.Muzzle = new Point(TankMan.Tank.Location.X + TankMan.Tank.Size.Width / 2, TankMan.Tank.Location.Y + TankMan.Tank.Size.Height);
+
+            if (TankMan.Tank.Bullet != null && !TankMan.Tank.IsFire)
+            {
+                TankMan.Tank.Bullet.Location = TankMan.Tank.Muzzle;
             }
 
             currentMove = MoveDown;
 
             return rect;
         }
+
     }
 }
 

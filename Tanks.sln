@@ -3,11 +3,13 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.2.32602.215
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Client", "Client\Client.csproj", "{08A87208-781F-4B1F-86FF-C49D56C41333}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Client", "Client\Client.csproj", "{08A87208-781F-4B1F-86FF-C49D56C41333}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Server", "Server\Server.csproj", "{BD1FBF3B-7846-4BFA-B3CC-5D296A1601E7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Server", "Server\Server.csproj", "{BD1FBF3B-7846-4BFA-B3CC-5D296A1601E7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Connection", "Connection\Connection.csproj", "{A544F6BA-0134-44CA-9CD8-56BC74AC31BC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Connection", "Connection\Connection.csproj", "{A544F6BA-0134-44CA-9CD8-56BC74AC31BC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TankLibrary", "TankLibrary\TankLibrary.csproj", "{B5717207-130C-4CCF-8119-96077AE9002E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -27,6 +29,10 @@ Global
 		{A544F6BA-0134-44CA-9CD8-56BC74AC31BC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A544F6BA-0134-44CA-9CD8-56BC74AC31BC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A544F6BA-0134-44CA-9CD8-56BC74AC31BC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B5717207-130C-4CCF-8119-96077AE9002E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B5717207-130C-4CCF-8119-96077AE9002E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B5717207-130C-4CCF-8119-96077AE9002E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B5717207-130C-4CCF-8119-96077AE9002E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

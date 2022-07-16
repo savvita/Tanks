@@ -1,26 +1,19 @@
 ﻿using Connection;
 using System;
-using System.ComponentModel;
 using System.Net.Sockets;
-using System.Runtime.CompilerServices;
+using TankLibrary;
 
 namespace Server.Model
 {
-    public class ClientModel : INotifyPropertyChanged
+    public class ClientModel
     {
-        private readonly TcpClient tcpClient;
-        private readonly SocketClient client = new SocketClient();
         private readonly ServerModel server;
+        private readonly TcpClient? tcpClient; 
 
-        public event PropertyChangedEventHandler? PropertyChanged;
-
-        /// <summary>
-        /// Unique identifier of the client
-        /// </summary>
-        public string Id { get; private set; }
+        private TankManModel tankman;
 
         /// <summary>
-        /// Name of the client. May not be unique
+        /// Unique name of the client
         /// </summary>
         public string? Name { get; set; }
 
@@ -29,105 +22,126 @@ namespace Server.Model
         /// </summary>
         public NetworkStream? Stream { get; private set; }
 
-        public ClientModel(TcpClient tcpClient, ServerModel server)
-        {
-            Id = Guid.NewGuid().ToString();
+        private UserModel user;
 
-            this.tcpClient = tcpClient;
+        public ClientModel(UserModel user, TcpClient tcpClient, ServerModel server)
+        {
+            this.user = user;
+            this.Name = user.Login;
             this.server = server;
 
+            tankman = new TankManModel()
+            {
+                Name = user.Login
+            };
+
+            
+            this.tcpClient = tcpClient;
+
             try
             {
-                Stream = tcpClient.GetStream();
+                this.Stream = tcpClient.GetStream();
             }
-            catch (Exception ex)
+            catch
             {
-                server.OnGotError($"[{DateTime.Now}] {Id} : {ex.Message}");
             }
-        }
 
-        private void OnPropertyChanged([CallerMemberName] string name = "")
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-        }
+            //tankman.Tank = server.ReceiveTankModel(Stream);
+            tankman.Tank = new TankModel();
 
-        public void Proceed()
-        {
-            string msg;
 
-            if (EnterChat())
+            if (tankman.Tank != null)
             {
-                do
-                {
-                    try
-                    {
-                        msg = client.ReceiveMessage(Stream);
-
-                        if(msg.Equals(SocketClient.ResultCode))
-                        {
-                            string res = client.ReceiveMessage(Stream);
-
-                            if(res.Equals(SocketClient.WinCode))
-                            {
-                                server.SetWin(this);
-                            }
-                        }
-
-                        if (msg.Equals(SocketClient.STOP_CODE))
-                        {
-                            break;
-                        }
-
-                        LastData = msg;
-
-                        if (msg != string.Empty)
-                        {
-                            server.BroadcastMessage(Id, msg);
-                        }
-
-                    }
-                    catch (Exception ex)
-                    {
-                        server.OnGotError($"[{DateTime.Now}] {Id} : {ex.Message}");
-                        break;
-                    }
-                } while (true);
-
-                server.RemoveClient(Id);
-
-                Close();
+                tankman.Tank.Health = GlobalSettings.Health;
+                tankman.Tank.Damage = GlobalSettings.Damage;
             }
         }
-
-        public string? LastData { get; set; }
 
         /// <summary>
-        /// Enter the chat, get a name
+        /// Proceed the client
         /// </summary>
-        /// <returns>True if no error during connection otherwise false</returns>
-        private bool EnterChat()
+        public void Proceed()
         {
-            try
+            if(Stream == null)
             {
-                server.AddClient(this);
-
-                if (server.Clients.Count == 1)
-                {
-                    server.SendMessage(this.Id, "noenemies");
-                }
-                else
-                {
-                    server.SendMessage(this.Id, String.Join('|', server.GetAllLastData()));
-                }
-            }
-            catch (Exception ex)
-            {
-                server.OnGotError($"[{DateTime.Now}] {Id} : {ex.Message}");
-                return false;
+                return;
             }
 
-            return true;
+            string msg;
+
+            do
+            {
+                try
+                {
+                    msg = SocketClient.ReceiveMessage(Stream);
+
+                    if(msg.Equals(SocketClient.ShopCode))
+                    {
+                        if (tankman.Tank != null)
+                        {
+                            string health = SocketClient.ReceiveMessage(Stream);
+                            tankman.Tank.Health += int.Parse(health);
+
+                            string damage = SocketClient.ReceiveMessage(Stream);
+                            tankman.Tank.Damage += int.Parse(damage);
+
+                            string coins = SocketClient.ReceiveMessage(Stream);
+                            user.Coins -= int.Parse(coins);
+
+                            SocketClient.SendMessage(Stream, user.Coins.ToString());
+                            SocketClient.SendMessage(Stream, tankman.Tank.Health.ToString());
+                            SocketClient.SendMessage(Stream, tankman.Tank.Damage.ToString());
+                        }
+                    }
+
+                    else if(msg.Equals(SocketClient.StartCode))
+                    {
+                        server.AddClient(this);
+
+                        int width = int.Parse(SocketClient.ReceiveMessage(Stream));
+                        int height = int.Parse(SocketClient.ReceiveMessage(Stream));
+
+                        //tankman.Tank = server.ReceiveTankModel(Stream);
+
+                        TankModel? tank = server.ReceiveTankModel(Stream);
+                        if(tank != null)
+                        {
+                            tank.Health = tankman.Tank.Health;
+                            tank.Damage = tankman.Tank.Damage;
+                            tank.IsAlive = true;
+                        }
+
+                        tankman.Tank = tank;
+
+                        server.JoinBattle(tankman, width, height);
+                        server.SendTanks();
+                    }
+
+                    else if (msg.Equals(SocketClient.StopCode))
+                    {
+                        break;
+                    }
+
+                    else if (msg != string.Empty)
+                    {
+                        string? res = server.HandleBattle(msg);
+                        server.BroadcastMessage(Name, res);
+                    }
+
+                }
+                catch (Exception ex)
+                {
+                    server.OnGotError($"[{DateTime.Now}] {Name} : {ex.Message}");
+                    break;
+                }
+            } while (true);
+
+            server.RemoveClient(Name);
+
+            Close();
         }
+
+        
 
         /// <summary>
         /// Close all connections

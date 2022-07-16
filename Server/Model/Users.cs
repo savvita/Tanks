@@ -1,10 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 
 namespace Server.Model
 {
@@ -22,27 +19,25 @@ namespace Server.Model
         /// </summary>
         public void LoadUsers()
         {
-            if (File.Exists(usersFile))
+            if (File.Exists(GlobalSettings.UsersFile))
             {
                 try
                 {
-                    string _users = File.ReadAllText(usersFile);
+                    string _users = File.ReadAllText(GlobalSettings.UsersFile);
                     users = JsonSerializer.Deserialize<List<UserModel>>(_users);
                 }
                 catch { }
             }
         }
 
-        private string usersFile = Path.Combine(Environment.CurrentDirectory, "users.txt");
-
         /// <summary>
         /// Save the list of the users
         /// </summary>
         public void SaveUsers()
         {
-            if (!File.Exists(usersFile))
+            if (!File.Exists(GlobalSettings.UsersFile))
             {
-                File.Create(usersFile);
+                File.Create(GlobalSettings.UsersFile);
             }
 
             try
@@ -50,54 +45,16 @@ namespace Server.Model
                 if (users != null)
                 {
                     string _users = JsonSerializer.Serialize<List<UserModel>>(users);
-                    File.WriteAllText(usersFile, _users);
+                    File.WriteAllText(GlobalSettings.UsersFile, _users);
                 }
             }
             catch { }
         }
 
-        public void SetWin(string name)
-        {
-            for (int i = 0; i < users.Count; i++)
-            {
-                if (users[i].Login.Equals(name))
-                {
-                    users[i].TotalWins++;
-                    users[i].Score += 100;
-                    break;
-                }
-            }
-        }
-
-        public void SetTotal(string name)
-        {
-            for (int i = 0; i < users.Count; i++)
-            {
-                if (users[i].Login.Equals(name))
-                {
-                    users[i].TotalGames++;
-                    break;
-                }
-            }
-        }
-
-        private UserModel AddToTheList(string? login, string? password)
-        {
-            UserModel model = new UserModel()
-            {
-                Login = login,
-                Password = password,
-            };
-
-            users?.Add(model);
-
-            return model;
-        }
 
         /// <summary>
         /// Check if the user is registered
         /// </summary>
-        /// <param name="ip">IP of the user</param>
         /// <param name="login">Login</param>
         /// <param name="password">Password</param>
         /// <returns>True if the user is registered otherwise false</returns>
@@ -114,25 +71,115 @@ namespace Server.Model
         /// <summary>
         /// Register a new user
         /// </summary>
-        /// <param name="ip">IP of the user</param>
         /// <param name="login">Login of the user</param>
         /// <param name="password">Password of the user</param>
-        /// <returns>True if a new user is registred otherwise false</returns>
-        public bool RegisterUser(string login, string password)
+        /// <returns>Usermodel if registration is successful otherwise null</returns>
+        public UserModel? RegisterUser(string login, string password)
         {
             if (users == null)
             {
-                return false;
+                return null;
             }
 
             if (users.Any(x => x.Login != null && x.Login.Equals(login)))
             {
-                return false;
+                return null;
             }
 
-            AddToTheList(login, password);
-            return true;
+            return AddToTheList(login, password);
         }
 
+        /// <summary>
+        /// Add a new user to the liset of registred users
+        /// </summary>
+        /// <param name="login"></param>
+        /// <param name="password"></param>
+        /// <returns>Model of a new user</returns>
+        private UserModel AddToTheList(string? login, string? password)
+        {
+            UserModel model = new UserModel()
+            {
+                Login = login,
+                Password = password,
+            };
+
+            users?.Add(model);
+
+            return model;
+        }
+
+        /// <summary>
+        /// Increase the count of wins and add the coins to the winner
+        /// </summary>
+        /// <param name="name">Name of the winner</param>
+        public void SetWinner(string? name)
+        {
+            UserModel? user = GetUserByName(name);
+
+            if (user != null)
+            {
+                user.TotalWins++;
+                user.Coins += GlobalSettings.Coins;
+            }
+        }
+
+        /// <summary>
+        /// Increase a total count of games when user starts a new game
+        /// </summary>
+        /// <param name="name">Name of the user</param>
+        public void SetTotalGames(string? name)
+        {
+            UserModel? user = GetUserByName(name);
+
+            if (user != null)
+            {
+                user.TotalGames++;
+            }
+        }
+
+        /// <summary>
+        /// Get coins of the user
+        /// </summary>
+        /// <param name="name">Name of the user</param>
+        /// <returns>Coins</returns>
+        public int GetCoins(string? name)
+        {
+            UserModel? user = GetUserByName(name);
+
+            if (user != null)
+            {
+                return user.Coins;
+            }
+
+            return 0;
+        }
+
+        /// <summary>
+        /// Find user by name
+        /// </summary>
+        /// <param name="name">Name of the user</param>
+        /// <returns>Model of the user or null if the user is not found</returns>
+        public UserModel? GetUserByName(string? name)
+        {
+            if (users == null || name == null)
+            {
+                return null;
+            }
+
+            for (int i = 0; i < users.Count; i++)
+            {
+                if (users[i].Login == null)
+                {
+                    continue;
+                }
+
+                if (users[i].Login!.Equals(name))
+                {
+                    return users[i];
+                }
+            }
+
+            return null;
+        }
     }
 }

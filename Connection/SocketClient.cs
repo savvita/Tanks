@@ -3,66 +3,100 @@ using System.Text;
 
 namespace Connection
 {
-    public class SocketClient
+    public static class SocketClient
     {
         /// <summary>
         /// Size of buffer array
         /// </summary>
-        public int BufferSize { get; set; } = 256;
+        public static int BufferSize { get; } = 256;
+
+        /// <summary>
+        /// Port to connect
+        /// </summary>
+        public static int Port { get; } = 8008;
+
+        /// <summary>
+        /// IP of the server
+        /// </summary>
+        public static string Host { get; } = "127.0.0.1";
 
         /// <summary>
         /// Default encoding of messages
         /// </summary>
-        public Encoding MessageEncoding { get; set; } = Encoding.Unicode;
+        public static Encoding MessageEncoding { get; } = Encoding.Unicode;
 
         /// <summary>
-        /// Code to stop communication
+        /// Stop code
         /// </summary>
-        public const string STOP_CODE = "/out";
+        public static string StopCode { get; } = "/stop";
+
+        /// <summary>
+        /// Stop code
+        /// </summary>
+        public static string ErrorCode { get; } = "/error";
 
         /// <summary>
         /// Ok code
         /// </summary>
-        public static string OkCode { get; set; } = "/ok";
+        public static string OkCode { get; } = "/ok";
 
         /// <summary>
         /// Fail code
         /// </summary>
-        public static string FailCode { get; set; } = "/fail";
+        public static string FailCode { get; } = "/fail";
 
         /// <summary>
         /// Authorization code
         /// </summary>
-        public static string AuthorizationCode { get; set; } = "/login";
+        public static string AuthorizationCode { get; } = "/login";
 
         /// <summary>
         /// Registration code
         /// </summary>
-        public static string RegistrationCode { get; set; } = "/register";
+        public static string RegistrationCode { get; } = "/register";
 
-        public static string ResultCode { get; set; } = "/result";
+        /// <summary>
+        /// Setting result code
+        /// </summary>
+        public static string ResultCode { get; } = "/result";
 
-        public static string WinCode { get; set; } = "/win";
+        /// <summary>
+        /// Code to set the winner
+        /// </summary>
+        public static string WinCode { get; } = "/win";
 
-        public static string LostCode { get; set; } = "/lost";
+        /// <summary>
+        /// Code to set the looser 
+        /// </summary>
+        public static string LostCode { get; } = "/lost";
+
+        /// <summary>
+        /// Code to set the values from the shop 
+        /// </summary>
+        public static string ShopCode { get; } = "/shop";
+
+        /// <summary>
+        /// Code to join the game
+        /// </summary>
+        public static string StartCode { get; } = "/start";
 
         /// <summary>
         /// Send a message to the stream
         /// </summary>
         /// <param name="stream">Network stream</param>
         /// <param name="message">Message to send</param>
-        public void SendMessage(NetworkStream stream, string message)
+        public static void SendMessage(NetworkStream? stream, string message)
         {
+            if(stream == null)
+            {
+                return;
+            }
+
             byte[] data = MessageEncoding.GetBytes(message);
 
-            //using (BinaryWriter writer = new BinaryWriter(stream))
-            {
-                BinaryWriter writer = new BinaryWriter(stream);
-                writer.Write(data.Length);
-                writer.Write(data);
-            }
-            
-            //stream.Write(data, 0, data.Length);
+            BinaryWriter writer = new BinaryWriter(stream);
+            writer.Write(data.Length);
+            writer.Write(data);
         }
 
         /// <summary>
@@ -70,31 +104,20 @@ namespace Connection
         /// </summary>
         /// <param name="stream">Network stream</param>
         /// <returns>Received message</returns>
-        public string ReceiveMessage(NetworkStream stream)
+        public static string ReceiveMessage(NetworkStream stream)
         {
-            string msg = String.Empty;
-            //using (BinaryReader reader = new BinaryReader(stream))
-            {
-                BinaryReader reader = new BinaryReader(stream);
-                int length = reader.ReadInt32();
-                byte[] data = new byte[length];
-                reader.Read(data, 0 , length);
-                msg = MessageEncoding.GetString(data, 0, length);
-            }
+            string msg;
+
+            BinaryReader reader = new BinaryReader(stream);
+
+            int length = reader.ReadInt32();
+
+            byte[] data = new byte[length];
+            reader.Read(data, 0 , length);
+
+            msg = MessageEncoding.GetString(data, 0, length);
 
             return msg;
-
-            //StringBuilder sb = new StringBuilder();
-            //byte[] data = new byte[BufferSize];
-            //int count;
-
-            //do
-            //{
-            //    count = stream.Read(data, 0, BufferSize);
-            //    sb.Append(MessageEncoding.GetString(data, 0, count));
-            //} while (stream.DataAvailable);
-
-            //return sb.ToString();
         }
     }
 }

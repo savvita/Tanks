@@ -1,32 +1,42 @@
 ﻿using Connection;
 using System;
 using System.Collections.Generic;
-using System.IO;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Drawing;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
+using System.Runtime.CompilerServices;
+using System.Text.Json;
 using System.Threading;
-using System.Threading.Tasks;
+using TankLibrary;
 
 namespace Server.Model
 {
-    public class ServerModel
+    public class ServerModel : INotifyPropertyChanged
     {
         private TcpListener? listener;
-        private readonly int port;
-        private readonly SocketClient chat = new SocketClient();
+        private Users users = new Users();
+        private BattlefieldModel battlefield;
 
         /// <summary>
         /// List of clients connected to the server
         /// </summary>
-        private readonly List<ClientModel> clients = new List<ClientModel>();
-        public List<ClientModel> Clients
+        private ObservableCollection<ClientModel>? clients;
+        public ObservableCollection<ClientModel>? Clients
         {
             get => clients;
+            private set
+            {
+                clients = value;
+                OnPropertyChanged(nameof(Clients));
+            }
         }
 
         #region Events
+        public event PropertyChangedEventHandler? PropertyChanged;
+
         /// <summary>
         /// Raise when during the connection was an error
         /// </summary>
@@ -48,11 +58,13 @@ namespace Server.Model
         public Action<ClientModel>? ClientDisconnected;
         #endregion
 
-        public ServerModel(int port = 8008)
+        public ServerModel()
         {
-            this.port = port;
+            Clients = new ObservableCollection<ClientModel>();
+            battlefield = new BattlefieldModel();
+            battlefield.Lost += OnLost;
+            battlefield.Won += OnWon;
         }
-
 
         /// <summary>
         /// Listen to the port
@@ -61,7 +73,7 @@ namespace Server.Model
         {
             try
             {
-                listener = new TcpListener(IPAddress.Any, port);
+                listener = new TcpListener(IPAddress.Any, SocketClient.Port);
                 listener.Start();
 
                 ServerStarted?.Invoke($"[{DateTime.Now}] Server started");
@@ -81,6 +93,7 @@ namespace Server.Model
             }
             catch (Exception ex)
             {
+                OnGotError($"[{DateTime.Now}] {ex.Message}");
                 Close();
             }
         }
@@ -97,59 +110,49 @@ namespace Server.Model
                 {
                     NetworkStream stream = tcpClient.GetStream();
 
-                    
-                    //string[] cols = authorization.Split(',');
-
-                    string code = chat.ReceiveMessage(stream);
-                    chat.SendMessage(stream, SocketClient.OkCode);
+                    string code = SocketClient.ReceiveMessage(stream);
 
                     if (code.Equals(SocketClient.RegistrationCode))
                     {
-                        string authorization = chat.ReceiveMessage(stream);
+                        string authorization = SocketClient.ReceiveMessage(stream);
 
                         string[] cols = authorization.Split(',');
 
-                        if (RegisterClient(cols[0], cols[1]))
+                        UserModel? user = users.RegisterUser(cols[0], cols[1]);
+
+                        if (user != null)
                         {
-                            chat.SendMessage(stream, SocketClient.OkCode);
+                            SocketClient.SendMessage(stream, SocketClient.OkCode);
+                            ClientModel client = new ClientModel(user, tcpClient, this);
 
-
-                            ClientModel client = new ClientModel(tcpClient, this)
-                            {
-                                Name = cols[0]
-                            };
-
-                            users.SetTotal(client.Name);
-
+                            AcceptClient(cols[0], stream);
                             client.Proceed();
                         }
                         else
                         {
-                            chat.SendMessage(stream, SocketClient.FailCode);
+                            SocketClient.SendMessage(stream, SocketClient.FailCode);
                         }
                     }
                     else if (code.Equals(SocketClient.AuthorizationCode))
                     {
-                        string authorization = chat.ReceiveMessage(stream);
+                        string authorization = SocketClient.ReceiveMessage(stream);
 
                         string[] cols = authorization.Split(',');
 
-                        if (AuthorizateClient(cols[0], cols[1]))
+                        UserModel? user = users.GetUserByName(cols[0]);
+
+                        if (user != null)
                         {
-                            chat.SendMessage(stream, SocketClient.OkCode);
+                            SocketClient.SendMessage(stream, SocketClient.OkCode);
+                            ClientModel client = new ClientModel(user, tcpClient, this);
 
-                            ClientModel client = new ClientModel(tcpClient, this)
-                            {
-                                Name = cols[0]
-                            };
+                            AcceptClient(cols[0], stream);
 
-                            users.SetTotal(client.Name);
-
-                            client.Proceed();
+                            client?.Proceed();
                         }
                         else
                         {
-                            chat.SendMessage(stream, SocketClient.FailCode);
+                            SocketClient.SendMessage(stream, SocketClient.FailCode);
                         }
                     }
                 }
@@ -160,88 +163,101 @@ namespace Server.Model
             }
         }
 
-        public void SetWin(ClientModel client)
+        /// <summary>
+        /// Acccept new client
+        /// </summary>
+        /// <param name="name">Name of the client</param>
+        /// <param name="stream">Network stream of the new client</param>
+        private void AcceptClient(string name, NetworkStream stream)
         {
-            users.SetWin(client.Name);
-        }
-
-        private Users users = new Users();
-
-        private bool AuthorizateClient(string login, string password)
-        {
-            return users.IsUserRegistered(login, password);
-
-        }
-
-        private bool RegisterClient(string login, string password)
-        {
-            return users.RegisterUser(login, password);
-        }
-
-        public List<string?>? GetAllLastData()
-        {
-            if (Clients == null)
-                return null;
-
-            List<string?>? data = new List<string?>();
-            for (int i = 0; i < Clients.Count; i++)
+            if (clients == null)
             {
-                if(Clients[i].LastData != null)
-                    data.Add(Clients[i].LastData);
+                return;
             }
 
-            return data;
+
+            int coins = users.GetCoins(name);
+            SocketClient.SendMessage(stream, coins.ToString());
+            SocketClient.SendMessage(stream, GlobalSettings.Health.ToString());
+            SocketClient.SendMessage(stream, GlobalSettings.Damage.ToString());
+
+            users.SetTotalGames(name);
         }
 
         /// <summary>
-        /// Add new client model to the list of active clients
+        /// Add new client to the list of active clients
         /// </summary>
         /// <param name="client">Client to add</param>
         public void AddClient(ClientModel client)
         {
-            clients.Add(client);
+            if (clients == null)
+            {
+                return;
+            }
 
+            clients.Add(client);
             ClientConnected?.Invoke(client);
         }
 
         /// <summary>
         /// Remove client from the list
         /// </summary>
-        /// <param name="id">Id of client to remove</param>
-        public void RemoveClient(string id)
+        /// <param name="name">Name of client to remove</param>
+        public void RemoveClient(string? name)
         {
-            ClientModel? client = GetClientById(id);
+            ClientModel? client = GetClientByName(name);
 
             if (client != null)
             {
-                clients.Remove(client);
+                battlefield.RemoveTankMan(name);
+                clients!.Remove(client);
                 ClientDisconnected?.Invoke(client);
             }
         }
 
         /// <summary>
-        /// Get a client by its Id
+        /// Get a client by its name
         /// </summary>
-        /// <param name="id">Id of a client</param>
-        /// <returns>Client with specified Id</returns>
-        public ClientModel? GetClientById(string id)
+        /// <param name="name">Name of a client</param>
+        /// <returns>Client</returns>
+        private ClientModel? GetClientByName(string? name)
         {
-            return clients.Where(x => x.Id.Equals(id)).FirstOrDefault();
+            if(clients == null || name == null)
+            {
+                return null;
+            }
+
+            return clients.Where(x => x.Name != null && x.Name.Equals(name)).FirstOrDefault();
         }
 
-        public void BroadcastMessage(string senderId, string message)
+        /// <summary>
+        /// Send the message to all the users except for the original sender
+        /// </summary>
+        /// <param name="sender">Name of the sender</param>
+        /// <param name="message">Message</param>
+        public void BroadcastMessage(string? sender, string? message)
         {
+            if(clients == null || message == null)
+            {
+                return;
+            }
+
             for (int i = 0; i < clients.Count; i++)
             {
-                if (!clients[i].Id.Equals(senderId))
+                if (clients[i].Name == null)
+                {
+                    continue;
+                }
+
+                //if (sender == null || !clients[i].Name!.Equals(sender))
                 {
                     try
                     {
-                         chat.SendMessage(clients[i].Stream, message);
+                         SocketClient.SendMessage(clients[i].Stream, message);
                     }
                     catch (Exception ex)
                     {
-                        OnGotError($"[{DateTime.Now}] {clients[i].Id} : {ex.Message}" + Environment.NewLine);
+                        OnGotError($"[{DateTime.Now}] {clients[i].Name} : {ex.Message}");
                     }
                 }
             }
@@ -252,14 +268,110 @@ namespace Server.Model
         /// </summary>
         public void Close()
         {
-            BroadcastMessage("", SocketClient.STOP_CODE);
-            for (int i = 0; i < clients.Count; i++)
+            BroadcastMessage("", SocketClient.StopCode);
+
+            if (clients != null)
             {
-                clients[i].Close();
+                for (int i = 0; i < clients.Count; i++)
+                {
+                    clients[i].Close();
+                }
             }
+
             users.SaveUsers();
-            clients.Clear();
+            clients?.Clear();
             listener?.Stop();
+        }
+
+        public TankModel? ReceiveTankModel(NetworkStream stream)
+        {
+            string? msg = SocketClient.ReceiveMessage(stream);
+
+            if(msg == null)
+            {
+                return null;
+            }
+
+            try
+            {
+                TankModel? tankModel = JsonSerializer.Deserialize<TankModel>(msg);
+                return tankModel;
+            }
+            catch { }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Add a client to the battle
+        /// </summary>
+        /// <param name="tankman">Tankman of the client</param>
+        public void JoinBattle(TankManModel tankman, int width, int height)
+        {
+            Random random = new Random();
+            bool isCorrect = false;
+
+            do
+            {
+                tankman.Tank.Location = new Point(random.Next(width - tankman.Tank.Rectangle.Width),
+                    random.Next(height - tankman.Tank.Rectangle.Height));
+
+                bool isIntersect = false;
+                for (int i = 0; i < battlefield.Tankmen.Count; i++)
+                {
+                    if (tankman.Tank.Rectangle.IntersectsWith(battlefield.Tankmen[i].Tank.Rectangle))
+                    {
+                        isIntersect = true;
+                        break;
+                    }
+
+                }
+
+                isCorrect = !isIntersect;
+            } while (!isCorrect);
+
+
+            if (tankman.Tank.Bullet != null)
+            {
+                tankman.Tank.Bullet.Location = tankman.Tank.Muzzle;
+            }
+
+            battlefield.Tankmen.Add(tankman);
+        }
+
+        /// <summary>
+        /// Handle battle with new data
+        /// </summary>
+        /// <param name="msg">Data from the client</param>
+        /// <returns>New data</returns>
+        public string? HandleBattle(string msg)
+        {
+            try
+            {
+                List<TankManModel>? tankmen = JsonSerializer.Deserialize<List<TankManModel>>(msg);
+
+                if(tankmen != null)
+                {
+                    battlefield.Tankmen = tankmen;
+                    battlefield.HandleBattle();
+
+                    string? res = JsonSerializer.Serialize<List<TankManModel>>(battlefield.Tankmen);
+
+                    return res;
+                }
+            }
+            catch (Exception ex)
+            {
+                OnGotError($"[{DateTime.Now}] : {ex.Message}");
+            }
+
+            return null;
+        }
+
+        public void SendTanks()
+        {
+            string? msg = JsonSerializer.Serialize<List<TankManModel>>(battlefield.Tankmen);
+            BroadcastMessage("", msg);
         }
 
         /// <summary>
@@ -271,23 +383,44 @@ namespace Server.Model
             GotError?.Invoke(message);
         }
 
+        private void OnLost(TankManModel tankman)
+        {
+            SendMessage(tankman.Name, SocketClient.LostCode);
+        }
+
+        private void OnWon(TankManModel tankman)
+        {
+            SendMessage(tankman.Name, SocketClient.WinCode);
+            users.SetWinner(tankman.Name);
+        }
+
         /// <summary>
         /// Send message from the server to the client
         /// </summary>
-        /// <param name="id">Id of the client to send a message to</param>
+        /// <param name="name">Name of the client to send a message to</param>
         /// <param name="message">Message</param>
-        public void SendMessage(string id, string? message)
+        public void SendMessage(string? name, string? message)
         {
+            if(name == null)
+            {
+                return;
+            }
+
             try
             {
-                ClientModel? client = GetClientById(id);
+                ClientModel? client = GetClientByName(name);
 
                 if (client != null && message != null)
                 {
-                    chat.SendMessage(client.Stream, message);
+                    SocketClient.SendMessage(client.Stream, message);
                 }
             }
             catch { }
+        }
+
+        private void OnPropertyChanged([CallerMemberName] string name = "")
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
     }
 }

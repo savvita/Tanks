@@ -1,26 +1,18 @@
 ﻿using Connection;
 using System.Net.Sockets;
+using TankLibrary;
 
 namespace Client.Model
 {
     public class ClientModel
     {
-        private readonly int port;
-        private readonly string host;
         private TcpClient? tcpClient;
         private NetworkStream? stream;
-        private readonly SocketClient client = new SocketClient();
 
         /// <summary>
         /// Name of the client
         /// </summary>
         public string? Name { get; set; }
-
-        public ClientModel(string host, int port)
-        {
-            this.host = host;
-            this.port = port;
-        }
 
         /// <summary>
         /// Connect to the server
@@ -33,7 +25,7 @@ namespace Client.Model
 
             try
             {
-                tcpClient.Connect(host, port);
+                tcpClient.Connect(SocketClient.Host, SocketClient.Port);
                 stream = tcpClient.GetStream();
                 result = true;
             }
@@ -60,7 +52,7 @@ namespace Client.Model
             bool result;
             try
             {
-                client.SendMessage(stream, message);
+                SocketClient.SendMessage(stream, message);
                 result = true;
             }
             catch
@@ -81,9 +73,9 @@ namespace Client.Model
             string msg;
             try
             {
-                msg = client.ReceiveMessage(stream);
+                msg = SocketClient.ReceiveMessage(stream);
 
-                if (msg.Equals(SocketClient.STOP_CODE))
+                if (msg.Equals(SocketClient.StopCode))
                 {
                     msg = $"[{DateTime.Now}] Server: Disconnected";
                     isSuccess = false;
@@ -111,7 +103,7 @@ namespace Client.Model
         {
             if (stream != null)
             {
-                SendMessage(SocketClient.STOP_CODE);
+                SendMessage(SocketClient.StopCode);
             }
 
             Disconnect();
@@ -132,6 +124,7 @@ namespace Client.Model
                 tcpClient.Close();
             }
         }
+        
         /// <summary>
         /// Authorizate at the server
         /// </summary>
@@ -146,8 +139,8 @@ namespace Client.Model
             {
                 try
                 {
-                    client.SendMessage(stream, SocketClient.AuthorizationCode);
-
+                    SocketClient.SendMessage(stream, SocketClient.AuthorizationCode);
+                    
                     return GetAuthorizationResponse(login, password);
                 }
                 catch { }
@@ -169,7 +162,7 @@ namespace Client.Model
             {
                 try
                 {
-                    client.SendMessage(stream, SocketClient.RegistrationCode);
+                    SocketClient.SendMessage(stream, SocketClient.RegistrationCode);
 
                     return GetAuthorizationResponse(login, password);
                 }
@@ -178,6 +171,12 @@ namespace Client.Model
             return false;
         }
 
+        /// <summary>
+        /// Get response from the server avout authorization request
+        /// </summary>
+        /// <param name="login">Login of the user</param>
+        /// <param name="password">Password of the user</param>
+        /// <returns></returns>
         private bool GetAuthorizationResponse(string login, string password)
         {
             if (stream == null)
@@ -185,20 +184,11 @@ namespace Client.Model
                 return false;
             }
 
-            client.ReceiveMessage(stream);
-            client.SendMessage(stream, string.Join(',', login, password));
+            SocketClient.SendMessage(stream, string.Join(',', login, password));
 
-            string response = client.ReceiveMessage(stream);
+            string response = SocketClient.ReceiveMessage(stream);
 
-            if (!response.Equals(SocketClient.FailCode))
-            {
-                this.Name = login;
-                return true;
-            }
-            else
-            {
-                return false;
-            }
+            return response.Equals(SocketClient.OkCode);
         }
     }
 }

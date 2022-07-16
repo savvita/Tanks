@@ -18,10 +18,19 @@ namespace Server.Model
         /// </summary>
         public string? Password { get; set; }
 
+        /// <summary>
+        /// Total played games
+        /// </summary>
         public int TotalGames { get; set; }
 
+        /// <summary>
+        /// Total wins
+        /// </summary>
         public int TotalWins { get; set; }
 
-        public int Score { get; set; }
+        /// <summary>
+        /// Earned coins
+        /// </summary>
+        public int Coins { get; set; }
     }
 }
