@@ -10,7 +10,7 @@ namespace Server.Model
         private readonly ServerModel server;
         private readonly TcpClient? tcpClient; 
 
-        private TankManModel tankman;
+        public TankManModel Tankman { get; set; }
 
         /// <summary>
         /// Unique name of the client
@@ -30,7 +30,7 @@ namespace Server.Model
             this.Name = user.Login;
             this.server = server;
 
-            tankman = new TankManModel()
+            Tankman = new TankManModel()
             {
                 Name = user.Login
             };
@@ -46,16 +46,17 @@ namespace Server.Model
             {
             }
 
-            //tankman.Tank = server.ReceiveTankModel(Stream);
-            tankman.Tank = new TankModel();
+            Tankman.Tank = new TankModel();
 
 
-            if (tankman.Tank != null)
+            if (Tankman.Tank != null)
             {
-                tankman.Tank.Health = GlobalSettings.Health;
-                tankman.Tank.Damage = GlobalSettings.Damage;
+                Tankman.Tank.Health = GlobalSettings.Health;
+                Tankman.Tank.Damage = GlobalSettings.Damage;
             }
         }
+
+        public SessionModel? Session { get; set; }
 
         /// <summary>
         /// Proceed the client
@@ -77,20 +78,20 @@ namespace Server.Model
 
                     if(msg.Equals(SocketClient.ShopCode))
                     {
-                        if (tankman.Tank != null)
+                        if (Tankman.Tank != null)
                         {
                             string health = SocketClient.ReceiveMessage(Stream);
-                            tankman.Tank.Health += int.Parse(health);
+                            Tankman.Tank.Health += int.Parse(health);
 
                             string damage = SocketClient.ReceiveMessage(Stream);
-                            tankman.Tank.Damage += int.Parse(damage);
+                            Tankman.Tank.Damage += int.Parse(damage);
 
                             string coins = SocketClient.ReceiveMessage(Stream);
                             user.Coins -= int.Parse(coins);
 
                             SocketClient.SendMessage(Stream, user.Coins.ToString());
-                            SocketClient.SendMessage(Stream, tankman.Tank.Health.ToString());
-                            SocketClient.SendMessage(Stream, tankman.Tank.Damage.ToString());
+                            SocketClient.SendMessage(Stream, Tankman.Tank.Health.ToString());
+                            SocketClient.SendMessage(Stream, Tankman.Tank.Damage.ToString());
                         }
                     }
 
@@ -101,20 +102,18 @@ namespace Server.Model
                         int width = int.Parse(SocketClient.ReceiveMessage(Stream));
                         int height = int.Parse(SocketClient.ReceiveMessage(Stream));
 
-                        //tankman.Tank = server.ReceiveTankModel(Stream);
-
                         TankModel? tank = server.ReceiveTankModel(Stream);
+
                         if(tank != null)
                         {
-                            tank.Health = tankman.Tank.Health;
-                            tank.Damage = tankman.Tank.Damage;
+                            tank.Health = Tankman.Tank.Health;
+                            tank.Damage = Tankman.Tank.Damage;
                             tank.IsAlive = true;
                         }
 
-                        tankman.Tank = tank;
+                        Tankman.Tank = tank;
 
-                        server.JoinBattle(tankman, width, height);
-                        server.SendTanks();
+                        server.JoinBattle(this, width, height);
                     }
 
                     else if (msg.Equals(SocketClient.StopCode))
@@ -122,10 +121,10 @@ namespace Server.Model
                         break;
                     }
 
-                    else if (msg != string.Empty)
+                    else if (msg != string.Empty && Session != null)
                     {
-                        string? res = server.HandleBattle(msg);
-                        server.BroadcastMessage(Name, res);
+                        string? res = Session.HandleBattle(msg);
+                        server.BroadcastMessage(res);
                     }
 
                 }

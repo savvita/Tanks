@@ -29,6 +29,11 @@ namespace Client.Controller
 
         private TankManModel? GetMe()
         {
+            if(TankMen == null)
+            {
+                return null;
+            }
+
             for (int i = 0; i < TankMen.Count; i++)
             {
                 if (TankMen[i].Name == null)
@@ -183,6 +188,7 @@ namespace Client.Controller
                     return;
                 }
 
+                me.Tank.Bullet = controller.TankMan.Tank.Bullet;
                 controller.TankMan.Tank = me.Tank;
 
                 controller.TankMan.Tank.IsFire = false;
@@ -226,18 +232,16 @@ namespace Client.Controller
 
 
                 client.SendMessage(SocketClient.StartCode);
+
                 client.SendMessage(controller.FieldBounds.Width.ToString());
                 client.SendMessage(controller.FieldBounds.Height.ToString());
-
-
-                bool isSuccess;
 
                 try
                 {
                     string tank = JsonSerializer.Serialize<TankModel>(controller.TankMan.Tank);
                     client.SendMessage(tank);
 
-                    string msg = client.ReceiveMessage(out isSuccess);
+                    string msg = client.ReceiveMessage(out bool _);
 
                     TankMen = JsonSerializer.Deserialize<List<TankManModel>>(msg);
                 }

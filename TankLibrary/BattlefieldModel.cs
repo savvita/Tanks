@@ -32,15 +32,23 @@
             Won?.Invoke(model);
         }
 
+        public bool IsGameStarted { get; set; } = false;
+
         /// <summary>
         /// Evaluate damages
         /// </summary>
         public void HandleBattle()
         {
-            int lives = 0;
+            if (!IsGameStarted)
+            {
+                return;
+            }
+
 
             for (int i = 0; i < Tankmen.Count; i++)
             {
+                int lives = 0;
+
                 if (Tankmen[i].Tank == null)
                 {
                     continue;
@@ -82,23 +90,25 @@
                             OnLost(Tankmen[j]);
                         }
                     }
+
+                    if (Tankmen[j].Tank!.IsAlive)
+                    {
+                        lives++;
+                    }
                 }
 
-                if (Tankmen[i].Tank!.IsAlive)
+                if (lives == 0)
                 {
-                    lives++;
-                }
-            }
+                    int idx = FindWinner();
 
-            if(lives == 0)
-            {
-                int i = FindWinner();
-
-                if(i != -1)
-                {
-                    OnWon(Tankmen[i]);
+                    if (idx != -1)
+                    {
+                        OnWon(Tankmen[idx]);
+                        break;
+                    }
+                    IsFinished = true;
+                    IsGameStarted = false;
                 }
-                IsFinished = true;
             }
         }
 

@@ -49,7 +49,7 @@ namespace Client.View
             context = SynchronizationContext.Current;
             controller = new FieldController(new Rectangle(0, 0, this.Width - 10, this.Height - 40), client);
             controller.Win += Controller_Win;
-            controller.Win += Controller_Lost;
+            controller.Lost += Controller_Lost;
             controller.Connect();
 
             Thread thread = new Thread(Drawing)
@@ -74,6 +74,7 @@ namespace Client.View
         {
             Label result = new Label();
             result.Text = "You win!";
+            result.BackColor = Color.Transparent;
             result.Font = new Font("Segoe UI", 32, FontStyle.Bold);
             result.Size = new Size(400, 200);
             result.Location = new Point((this.ClientRectangle.Width - result.Width) / 2, (this.ClientRectangle.Height - result.Height) / 2);
@@ -85,6 +86,7 @@ namespace Client.View
         {
             Label result = new Label();
             result.Text = "You lost (((";
+            result.BackColor = Color.Transparent;
             result.Font = new Font("Segoe UI", 32, FontStyle.Bold);
             result.Size = new Size(400, 200);
             result.Location = new Point((this.ClientRectangle.Width - result.Width) / 2, (this.ClientRectangle.Height - result.Height) / 2);
@@ -108,6 +110,9 @@ namespace Client.View
                     DrawTank(controller.TankMen[i].Tank);
                     graphics.DrawString(controller.TankMen[i].Name, new Font("Segoe UI", 15), Brushes.Green, new Point(
                         controller.TankMen[i].Tank.Location.X, controller.TankMen[i].Tank.Location.Y + controller.TankMen[i].Tank.Size.Height + 5));
+
+                    graphics.DrawString(controller.TankMen[i].Tank.Health.ToString(), new Font("Segoe UI", 15), Brushes.Green, new Point(
+                        controller.TankMen[i].Tank.Location.X, controller.TankMen[i].Tank.Location.Y - 50));
 
                     if (controller.TankMen[i].Tank == null)
                     {

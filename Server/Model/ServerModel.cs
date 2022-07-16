@@ -18,7 +18,7 @@ namespace Server.Model
     {
         private TcpListener? listener;
         private Users users = new Users();
-        private BattlefieldModel battlefield;
+        //private BattlefieldModel battlefield;
 
         /// <summary>
         /// List of clients connected to the server
@@ -31,6 +31,17 @@ namespace Server.Model
             {
                 clients = value;
                 OnPropertyChanged(nameof(Clients));
+            }
+        }
+
+        private ObservableCollection<SessionModel>? sessions;
+        public ObservableCollection<SessionModel>? Sessions
+        {
+            get => sessions;
+            private set
+            {
+                sessions = value;
+                OnPropertyChanged(nameof(Sessions));
             }
         }
 
@@ -61,9 +72,19 @@ namespace Server.Model
         public ServerModel()
         {
             Clients = new ObservableCollection<ClientModel>();
-            battlefield = new BattlefieldModel();
-            battlefield.Lost += OnLost;
-            battlefield.Won += OnWon;
+            Sessions = new ObservableCollection<SessionModel>();
+
+            AddNewSession();
+        }
+
+        private void AddNewSession()
+        {
+            SessionModel session = new SessionModel();
+            session.Battlefield = new BattlefieldModel();
+            session.Battlefield.Lost += OnLost;
+            session.Battlefield.Won += OnWon;
+
+            Sessions?.Add(session);
         }
 
         /// <summary>
@@ -209,7 +230,7 @@ namespace Server.Model
 
             if (client != null)
             {
-                battlefield.RemoveTankMan(name);
+               // battlefield.RemoveTankMan(name);
                 clients!.Remove(client);
                 ClientDisconnected?.Invoke(client);
             }
@@ -235,9 +256,9 @@ namespace Server.Model
         /// </summary>
         /// <param name="sender">Name of the sender</param>
         /// <param name="message">Message</param>
-        public void BroadcastMessage(string? sender, string? message)
+        public void BroadcastMessage(string? message)
         {
-            if(clients == null || message == null)
+            if (clients == null || message == null)
             {
                 return;
             }
@@ -249,17 +270,15 @@ namespace Server.Model
                     continue;
                 }
 
-                //if (sender == null || !clients[i].Name!.Equals(sender))
+                try
                 {
-                    try
-                    {
-                         SocketClient.SendMessage(clients[i].Stream, message);
-                    }
-                    catch (Exception ex)
-                    {
-                        OnGotError($"[{DateTime.Now}] {clients[i].Name} : {ex.Message}");
-                    }
+                    SocketClient.SendMessage(clients[i].Stream, message);
                 }
+                catch (Exception ex)
+                {
+                    OnGotError($"[{DateTime.Now}] {clients[i].Name} : {ex.Message}");
+                }
+
             }
         }
 
@@ -268,7 +287,7 @@ namespace Server.Model
         /// </summary>
         public void Close()
         {
-            BroadcastMessage("", SocketClient.StopCode);
+            BroadcastMessage(SocketClient.StopCode);
 
             if (clients != null)
             {
@@ -306,73 +325,73 @@ namespace Server.Model
         /// Add a client to the battle
         /// </summary>
         /// <param name="tankman">Tankman of the client</param>
-        public void JoinBattle(TankManModel tankman, int width, int height)
+        public void JoinBattle(ClientModel client, int width, int height)
         {
-            Random random = new Random();
-            bool isCorrect = false;
-
-            do
+            if(Sessions == null)
             {
-                tankman.Tank.Location = new Point(random.Next(width - tankman.Tank.Rectangle.Width),
-                    random.Next(height - tankman.Tank.Rectangle.Height));
-
-                bool isIntersect = false;
-                for (int i = 0; i < battlefield.Tankmen.Count; i++)
-                {
-                    if (tankman.Tank.Rectangle.IntersectsWith(battlefield.Tankmen[i].Tank.Rectangle))
-                    {
-                        isIntersect = true;
-                        break;
-                    }
-
-                }
-
-                isCorrect = !isIntersect;
-            } while (!isCorrect);
-
-
-            if (tankman.Tank.Bullet != null)
-            {
-                tankman.Tank.Bullet.Location = tankman.Tank.Muzzle;
+                return;
             }
 
-            battlefield.Tankmen.Add(tankman);
-        }
+            SessionModel? session = Sessions.LastOrDefault();
 
-        /// <summary>
-        /// Handle battle with new data
-        /// </summary>
-        /// <param name="msg">Data from the client</param>
-        /// <returns>New data</returns>
-        public string? HandleBattle(string msg)
-        {
-            try
+            if (session == null || session.Clients == null)
             {
-                List<TankManModel>? tankmen = JsonSerializer.Deserialize<List<TankManModel>>(msg);
-
-                if(tankmen != null)
-                {
-                    battlefield.Tankmen = tankmen;
-                    battlefield.HandleBattle();
-
-                    string? res = JsonSerializer.Serialize<List<TankManModel>>(battlefield.Tankmen);
-
-                    return res;
-                }
-            }
-            catch (Exception ex)
-            {
-                OnGotError($"[{DateTime.Now}] : {ex.Message}");
+                return;
             }
 
-            return null;
+            if (session.Clients.Count >= GlobalSettings.MaxPlayers)
+            {
+                AddNewSession();
+                session = Sessions.LastOrDefault();
+            }
+
+            //if (session == null || session.Clients.Count >= GlobalSettings.MaxPlayers)
+            //{
+            //    return;
+            //}
+
+            session.Clients.Add(client);
+            client.Session = session;
+
+
+
+            session.JoinBattle(client.Tankman, width, height);
         }
 
-        public void SendTanks()
-        {
-            string? msg = JsonSerializer.Serialize<List<TankManModel>>(battlefield.Tankmen);
-            BroadcastMessage("", msg);
-        }
+        ///// <summary>
+        ///// Handle battle with new data
+        ///// </summary>
+        ///// <param name="msg">Data from the client</param>
+        ///// <returns>New data</returns>
+        //public string? HandleBattle(string msg)
+        //{
+        //    try
+        //    {
+        //        List<TankManModel>? tankmen = JsonSerializer.Deserialize<List<TankManModel>>(msg);
+
+        //        if(tankmen != null)
+        //        {
+        //            battlefield.Tankmen = tankmen;
+        //            battlefield.HandleBattle();
+
+        //            string? res = JsonSerializer.Serialize<List<TankManModel>>(battlefield.Tankmen);
+
+        //            return res;
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        OnGotError($"[{DateTime.Now}] : {ex.Message}");
+        //    }
+
+        //    return null;
+        //}
+
+        //public void SendTanks()
+        //{
+        //    string? msg = JsonSerializer.Serialize<List<TankManModel>>(battlefield.Tankmen);
+        //    BroadcastMessage("", msg);
+        //}
 
         /// <summary>
         /// Raise an event GotError

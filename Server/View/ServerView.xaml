@@ -8,6 +8,6 @@
         Title="ServerView" Height="450" Width="800" Closing="Window_Closing">
         
     <Grid>
-        
+        <ListBox ItemsSource="{Binding Server.Sessions}"></ListBox>
     </Grid>
 </Window>
