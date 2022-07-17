@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Drawing;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -17,9 +16,8 @@ namespace Server.Model
     public class ServerModel : INotifyPropertyChanged
     {
         private TcpListener? listener;
-        private Users users { get; } = new Users();
-
-        public event Action? UsersChanged;
+        private Users users = new Users();
+        private List<SessionModel>? sessions;
 
         /// <summary>
         /// List of clients connected to the server
@@ -33,18 +31,7 @@ namespace Server.Model
                 clients = value;
                 OnPropertyChanged(nameof(Clients));
             }
-        }
-
-        private List<SessionModel>? sessions;
-        //public ObservableCollection<SessionModel>? Sessions
-        //{
-        //    get => sessions;
-        //    private set
-        //    {
-        //        sessions = value;
-        //        OnPropertyChanged(nameof(Sessions));
-        //    }
-        //}
+        }    
 
         #region Events
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -68,6 +55,16 @@ namespace Server.Model
         /// Raise when the client is disconnected
         /// </summary>
         public Action<ClientModel>? ClientDisconnected;
+
+        /// <summary>
+        /// Raise when list of registered users changed
+        /// </summary>
+        public event Action? UsersChanged;
+
+        /// <summary>
+        /// Raise when list of the sessions changed
+        /// </summary>
+        public event Action? SessionsChanged;
         #endregion
 
         public ServerModel()
@@ -80,10 +77,27 @@ namespace Server.Model
             AddNewSession();
         }
 
+        /// <summary>
+        /// Get all the registered users
+        /// </summary>
+        /// <returns>List of the users</returns>
+        public List<UserModel>? GetAllUsers() => users.GetAllUsers();
+
+        /// <summary>
+        /// Get all the game sessions
+        /// </summary>
+        /// <returns>List of sessions</returns>
+        public List<SessionModel>? GetAllSessions() => sessions;
+
+        /// <summary>
+        /// Add new game session
+        /// </summary>
         private void AddNewSession()
         {
-            SessionModel session = new SessionModel();
-            session.Battlefield = new BattlefieldModel();
+            SessionModel session = new SessionModel
+            {
+                Battlefield = new BattlefieldModel()
+            };
             session.Battlefield.Lost += OnLost;
             session.Battlefield.Won += OnWon;
 
@@ -213,23 +227,6 @@ namespace Server.Model
 
             int won = users.GetWonGames(name);
             SocketClient.SendMessage(stream, won.ToString());
-
-            //users.SetTotalGames(name);
-        }
-
-        /// <summary>
-        /// Add new client to the list of active clients
-        /// </summary>
-        /// <param name="client">Client to add</param>
-        public void AddClient(ClientModel client)
-        {
-            if (clients == null)
-            {
-                return;
-            }
-
-            clients.Add(client);
-            ClientConnected?.Invoke(client);
         }
 
         /// <summary>
@@ -242,7 +239,13 @@ namespace Server.Model
 
             if (client != null)
             {
-               // battlefield.RemoveTankMan(name);
+                if(client.Session == null)
+                {
+                    return;
+                }
+
+                client.Session.Battlefield?.Tankmen.Remove(client.Tankman);
+                client.Session.Clients?.Remove(client);
                 clients!.Remove(client);
                 ClientDisconnected?.Invoke(client);
             }
@@ -264,9 +267,8 @@ namespace Server.Model
         }
 
         /// <summary>
-        /// Send the message to all the users except for the original sender
+        /// Send the message to all the users
         /// </summary>
-        /// <param name="sender">Name of the sender</param>
         /// <param name="message">Message</param>
         public void BroadcastMessage(string? message)
         {
@@ -314,8 +316,18 @@ namespace Server.Model
             listener?.Stop();
         }
 
-        public TankModel? ReceiveTankModel(NetworkStream stream)
+        /// <summary>
+        /// Receive a tank
+        /// </summary>
+        /// <param name="stream">Network stream to receive tank from</param>
+        /// <returns>Tank</returns>
+        public TankModel? ReceiveTankModel(NetworkStream? stream)
         {
+            if(stream == null)
+            {
+                return null;
+            }
+
             string? msg = SocketClient.ReceiveMessage(stream);
 
             if(msg == null)
@@ -336,7 +348,9 @@ namespace Server.Model
         /// <summary>
         /// Add a client to the battle
         /// </summary>
-        /// <param name="tankman">Tankman of the client</param>
+        /// <param name="client">Client to be added</param>
+        /// <param name="width">Width of the field</param>
+        /// <param name="height">Height of the field</param>
         public void JoinBattle(ClientModel client, int width, int height)
         {
             if(sessions == null)
@@ -357,10 +371,16 @@ namespace Server.Model
                 session = sessions.LastOrDefault();
             }
 
-            //if (session == null || session.Clients.Count >= GlobalSettings.MaxPlayers)
-            //{
-            //    return;
-            //}
+            if(session!.Battlefield == null || session.Battlefield.IsFinished)
+            {
+                AddNewSession();
+                session = sessions.LastOrDefault();
+            }
+
+            if(session!.Clients == null)
+            {
+                session.Clients = new List<ClientModel>();
+            }
 
             session.Clients.Add(client);
             client.Session = session;
@@ -368,24 +388,6 @@ namespace Server.Model
             session.JoinBattle(client.Tankman, width, height);
 
             SessionsChanged?.Invoke();
-        }
-
-        public event Action? SessionsChanged;
-
-        public void OnGotError(string message)
-        {
-            GotError?.Invoke(message);
-        }
-
-        private void OnLost(TankManModel tankman)
-        {
-            SendMessage(tankman.Name, SocketClient.LostCode);
-        }
-
-        private void OnWon(TankManModel tankman)
-        {
-            SendMessage(tankman.Name, SocketClient.WinCode);
-            users.SetWinner(tankman.Name);
         }
 
         /// <summary>
@@ -416,15 +418,20 @@ namespace Server.Model
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
-
-        public List<UserModel>? GetAllUsers()
+        public void OnGotError(string message)
         {
-            return users.GetAllUsers();
+            GotError?.Invoke(message);
         }
 
-        public List<SessionModel>? GetAllSessions()
+        private void OnLost(TankManModel tankman)
         {
-            return sessions;
+            SendMessage(tankman.Name, SocketClient.LostCode);
+        }
+
+        private void OnWon(TankManModel tankman)
+        {
+            SendMessage(tankman.Name, SocketClient.WinCode);
+            users.SetWinner(tankman.Name);
         }
     }
 }

@@ -1,18 +1,34 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Client.Model
+﻿namespace Client.Model
 {
     public class ImageBounds
     {
+        /// <summary>
+        /// Start position X
+        /// </summary>
         public int StartX { get; }
+
+        /// <summary>
+        /// Start position Y
+        /// </summary>
         public int StartY { get; }
 
+        /// <summary>
+        /// Width of the image
+        /// </summary>
         public int Width { get; }
+
+        /// <summary>
+        /// Height of the image
+        /// </summary>
         public int Height { get; }
+
+        /// <summary>
+        /// Rectangle of the image
+        /// </summary>
+        public Rectangle Rectangle
+        {
+            get => new Rectangle(StartX, StartY, Width, Height);
+        }
 
         public ImageBounds(int startX, int startY, int width, int height)
         {
@@ -20,11 +36,6 @@ namespace Client.Model
             StartY = startY;
             Width = width;
             Height = height;
-        }
-
-        public Rectangle Rectangle
-        {
-            get => new Rectangle(StartX, StartY, Width, Height);
         }
     }
 

@@ -7,10 +7,25 @@ namespace Client.Controller
 {
     public class FieldController
     {
-        private ClientModel client;
+        private readonly ClientModel? client;
+        private readonly TankController? controller;
 
-        private TankController controller { get; set; }
+        private readonly CancellationToken token;
+        private readonly CancellationTokenSource source;
 
+        /// <summary>
+        /// Raise when one of the tankmen wins
+        /// </summary>
+        public event Action? Win;
+
+        /// <summary>
+        /// Raise when one of the tankmen lost
+        /// </summary>
+        public event Action? Lost;
+
+        /// <summary>
+        /// Tankmen in the battle
+        /// </summary>
         public List<TankManModel>? TankMen { get; private set; }
 
         public FieldController(Rectangle fieldBounds, ClientModel client)
@@ -25,11 +40,18 @@ namespace Client.Controller
             controller.FieldBounds = fieldBounds;
 
             this.client = client;
+
+            source = new CancellationTokenSource();
+            token = source.Token;
         }
 
+        /// <summary>
+        /// Find a tank of the client
+        /// </summary>
+        /// <returns></returns>
         private TankManModel? GetMe()
         {
-            if(TankMen == null)
+            if (TankMen == null || client == null)
             {
                 return null;
             }
@@ -50,12 +72,18 @@ namespace Client.Controller
             return null;
         }
 
-        private bool IsMovePossible(Point location, Directions direction)
+        /// <summary>
+        /// Defint if the move is possible to the new location
+        /// </summary>
+        /// <param name="location">New location to check</param>
+        /// <returns>True if move is possible otherwise false</returns>
+        private bool IsMovePossible(Point location)
         {
-            if(TankMen == null)
+            if (TankMen == null)
             {
                 return false;
             }
+
             if (TankMen.Count <= 1)
             {
                 return true;
@@ -89,22 +117,34 @@ namespace Client.Controller
             return true;
         }
 
+        /// <summary>
+        /// Move tank to the specified direction
+        /// </summary>
+        /// <param name="direction">Direction in whick move to</param>
         public void Move(Directions direction)
         {
             TankManModel? me = GetMe();
 
-            if(me == null)
+            if (me == null || me.Tank == null)
             {
                 return;
             }
 
-            me.Tank.Bullet = controller.TankMan.Tank.Bullet;
+            if (controller == null)
+            {
+                return;
+            }
+
+            if (controller.TankMan.Tank != null)
+            {
+                me.Tank.Bullet = controller.TankMan.Tank.Bullet;
+            }
 
             controller.TankMan.Tank = me.Tank;
 
             Point location = controller.GetNextLocation(direction);
 
-            if (!IsMovePossible(location, direction) && controller.TankMan.Tank != null)
+            if (!IsMovePossible(location) && controller.TankMan.Tank != null)
             {
                 location = controller.TankMan.Tank.Location;
             }
@@ -128,6 +168,9 @@ namespace Client.Controller
             SendLocations();
         }
 
+        /// <summary>
+        /// Make a fire
+        /// </summary>
         public void Fire()
         {
             TankManModel? me = GetMe();
@@ -137,11 +180,16 @@ namespace Client.Controller
                 return;
             }
 
+            if (controller == null)
+            {
+                return;
+            }
+
             controller.TankMan.Tank = me.Tank;
 
             Action? move = controller.GetFireMoving();
 
-            if(move != null)
+            if (move != null)
             {
                 MoveBullet(move);
             }
@@ -149,6 +197,11 @@ namespace Client.Controller
 
         private void MoveBullet(Action move)
         {
+            if (controller == null)
+            {
+                return;
+            }
+
             if (controller.TankMan.Tank == null || controller.TankMan.Tank.Bullet == null)
             {
                 return;
@@ -162,7 +215,7 @@ namespace Client.Controller
                 {
                     me = GetMe();
 
-                    if (me == null)
+                    if (me == null || me.Tank == null)
                     {
                         return;
                     }
@@ -181,98 +234,149 @@ namespace Client.Controller
                     Thread.Sleep(100);
                 }
 
-                me = GetMe();
-
-                if (me == null)
-                {
-                    return;
-                }
-
-                me.Tank.Bullet = controller.TankMan.Tank.Bullet;
-                controller.TankMan.Tank = me.Tank;
-
-                controller.TankMan.Tank.IsFire = false;
-                controller.TankMan.Tank.Bullet.IsFlying = false;
-                controller.TankMan.Tank.Bullet.Location = controller.TankMan.Tank.Muzzle;
+                RestoreBulletLocation();
 
             });
         }
 
         /// <summary>
-        /// Connect to the server
+        /// Restore location of the bullet after the firing
         /// </summary>
-        public void Connect()
+        private void RestoreBulletLocation()
+        {
+            TankManModel? me = GetMe();
+
+            if (me == null || me.Tank == null)
+            {
+                return;
+            }
+
+            if (controller == null || controller.TankMan == null || controller.TankMan.Tank == null)
+            {
+                return;
+            }
+
+            me.Tank.Bullet = controller.TankMan.Tank.Bullet;
+            controller.TankMan.Tank = me.Tank;
+
+            controller.TankMan.Tank.IsFire = false;
+
+            if (controller.TankMan.Tank.Bullet != null)
+            {
+                controller.TankMan.Tank.Bullet.IsFlying = false;
+                controller.TankMan.Tank.Bullet.Location = controller.TankMan.Tank.Muzzle;
+            }
+        }
+
+        /// <summary>
+        /// Join to the battle
+        /// </summary>
+        public void ConnectToBattle()
         {
             try
             {
-                if(controller.TankMan.Tank == null)
-                {
-                    return;
-                }
-
-
-                Random random = new Random();
-                int ch = random.Next(4);
-
-                switch (ch)
-                {
-                    case 0:
-                        controller.MoveLeft(controller.TankMan.Tank.Location);
-                        break;
-                    case 1:
-                        controller.MoveRight(controller.TankMan.Tank.Location);
-                        break;
-                    case 2:
-                        controller.MoveUp(controller.TankMan.Tank.Location);
-                        break;
-                    case 3:
-                        controller.MoveDown(controller.TankMan.Tank.Location);
-                        break;
-                }
-
-
-                client.SendMessage(SocketClient.StartCode);
-
-                client.SendMessage(controller.FieldBounds.Width.ToString());
-                client.SendMessage(controller.FieldBounds.Height.ToString());
-
-                try
-                {
-                    string tank = JsonSerializer.Serialize<TankModel>(controller.TankMan.Tank);
-                    client.SendMessage(tank);
-
-                    string msg = client.ReceiveMessage(out bool _);
-
-                    TankMen = JsonSerializer.Deserialize<List<TankManModel>>(msg);
-                }
-                catch { }
-
+                InitializeTank();
             }
             catch { }
 
-            Thread listeningThread = new Thread(ReceivingMessages)
-            {
-                IsBackground = true
-            };
-            listeningThread.Start();
+            Task task = new Task(ReceivingMessages, token);
+            task.Start();
         }
 
-        public void Close()
+        /// <summary>
+        /// Initialize a tank at the beginning
+        /// </summary>
+        private void InitializeTank()
         {
-            client.Close();
+            if (client == null)
+            {
+                return;
+            }
+
+            if (controller == null || controller.TankMan.Tank == null)
+            {
+                return;
+            }
+
+            SetRandomStartDirection();
+
+            client.SendMessage(SocketClient.StartCode);
+
+            client.SendMessage(controller.FieldBounds.Width.ToString());
+            client.SendMessage(controller.FieldBounds.Height.ToString());
+
+            try
+            {
+                string tank = JsonSerializer.Serialize<TankModel>(controller.TankMan.Tank);
+                client.SendMessage(tank);
+
+                string msg = client.ReceiveMessage(out bool _);
+
+                TankMen = JsonSerializer.Deserialize<List<TankManModel>>(msg);
+            }
+            catch { }
         }
+
+        /// <summary>
+        /// Set random direction of the tank at the beginning
+        /// </summary>
+        private void SetRandomStartDirection()
+        {
+            if(controller == null || controller.TankMan.Tank == null)
+            {
+                return;
+            }
+
+            Random random = new Random();
+            int ch = random.Next(4);
+
+            switch (ch)
+            {
+                case 0:
+                    controller.MoveLeft(controller.TankMan.Tank.Location);
+                    break;
+                case 1:
+                    controller.MoveRight(controller.TankMan.Tank.Location);
+                    break;
+                case 2:
+                    controller.MoveUp(controller.TankMan.Tank.Location);
+                    break;
+                case 3:
+                    controller.MoveDown(controller.TankMan.Tank.Location);
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Leave the battle
+        /// </summary>
+        public void LeaveBattle()
+        {
+            client?.SendMessage(SocketClient.LeaveCode);
+            source.Cancel();
+        }
+
 
         /// <summary>
         /// Receiving messages unless the connection is not failed or stopped
         /// </summary>
         private void ReceivingMessages()
         {
-            bool isSuccess;
             do
             {
+                if(client == null)
+                {
+                    break;
+                }
+
+                if (token.IsCancellationRequested)
+                {
+                    break;
+                }
+
                 try
                 {
-                    string msg = client.ReceiveMessage(out isSuccess);
+                    string msg = client.ReceiveMessage(out bool _);
 
                     if (msg.Equals(SocketClient.WinCode))
                     {
@@ -288,12 +392,20 @@ namespace Client.Controller
 
                         TankManModel? me = GetMe();
 
-                        if (me == null)
+                        if (me == null || me.Tank == null)
                         {
                             return;
                         }
 
-                        me.Tank.Bullet = controller.TankMan.Tank.Bullet;
+                        if(controller == null)
+                        {
+                            return;
+                        }
+
+                        if (controller.TankMan.Tank != null)
+                        {
+                            me.Tank.Bullet = controller.TankMan.Tank.Bullet;
+                        }
                         controller.TankMan.Tank = me.Tank;
                     }
                 }
@@ -302,17 +414,21 @@ namespace Client.Controller
             } while (true);
         }
 
-        public event Action? Win;
-        public event Action? Lost;
 
-
+        /// <summary>
+        /// Send new locations of the tanks
+        /// </summary>
         private void SendLocations()
         {
+            if(TankMen == null)
+            {
+                return;
+            }
 
             try
             {
                 string? msg = JsonSerializer.Serialize<List<TankManModel>>(TankMen);
-                client.SendMessage(msg);
+                client?.SendMessage(msg);
             }
             catch { }
         }

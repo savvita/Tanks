@@ -1,6 +1,5 @@
 ﻿using Connection;
 using System.Net.Sockets;
-using TankLibrary;
 
 namespace Client.Model
 {
@@ -14,8 +13,14 @@ namespace Client.Model
         /// </summary>
         public string? Name { get; set; }
 
+        /// <summary>
+        /// Total played games
+        /// </summary>
         public int TotalGames { get; set; }
 
+        /// <summary>
+        /// Total won games
+        /// </summary>
         public int WonGames { get; set; }
 
         /// <summary>

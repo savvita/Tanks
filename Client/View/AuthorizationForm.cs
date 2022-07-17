@@ -5,7 +5,7 @@ namespace Client.View
 {
     public partial class AuthorizationForm : Form
     {
-        private AuthorizationController controller = new AuthorizationController();
+        private readonly AuthorizationController controller = new AuthorizationController();
 
         public ClientModel? Client { get; private set; }
         

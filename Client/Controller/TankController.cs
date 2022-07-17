@@ -7,6 +7,9 @@ namespace Client.Controller
     {
         private Func<Point, Rectangle>? currentMove;
 
+        /// <summary>
+        /// Tankman to control
+        /// </summary>
         public TankManModel TankMan { get; }
 
         /// <summary>
@@ -15,23 +18,30 @@ namespace Client.Controller
         public Rectangle FieldBounds { get; set; }
 
         /// <summary>
-        /// Describe sprite image this tank
+        /// Describe sprite image of the tank
         /// </summary>
-        public SpriteImageModel? SpriteImage { get; private set; }
+        public SpriteImageModel SpriteImage { get; private set; }
 
         public TankController(SpriteImageModel spriteImage)
         {
-            TankMan = new TankManModel();
-            TankMan.Tank = new TankModel();
-
-            TankMan.Tank.IsAlive = true;
-            TankMan.Tank.Bullet = new TankLibrary.BulletModel();
-
             SpriteImage = spriteImage;
+            
+            TankMan = new TankManModel();
+            InitializeTankman();
+        }
 
-            TankMan.Tank.Size = new Size(SpriteImage.MovingRightImageBounds.Width / 4, SpriteImage.MovingRightImageBounds.Height / 4);
-
-            TankMan.Tank.ImageBounds = SpriteImage.MovingRightImageBounds.Rectangle;
+        /// <summary>
+        /// Initialize tankman
+        /// </summary>
+        private void InitializeTankman()
+        {
+            TankMan.Tank = new TankModel
+            {
+                IsAlive = true,
+                Bullet = new BulletModel(),
+                Size = new Size(SpriteImage.MovingRightImageBounds.Width / 4, SpriteImage.MovingRightImageBounds.Height / 4),
+                ImageBounds = SpriteImage.MovingRightImageBounds.Rectangle
+            };
             currentMove = MoveRight;
 
             TankMan.Tank.Muzzle = new Point(TankMan.Tank.Location.X + TankMan.Tank.Size.Width, TankMan.Tank.Location.Y + TankMan.Tank.Size.Height / 2);
@@ -42,43 +52,10 @@ namespace Client.Controller
             }
         }
 
-        
         /// <summary>
-        /// Make a fire
+        /// Get a function describing the moving of the bullet
         /// </summary>
-        //public void Fire()
-        //{
-        //    if (TankMan.Tank == null || TankMan.Tank.Bullet == null)
-        //    {
-        //        return;
-        //    }
-
-        //    if (TankMan.Tank.IsFire || !TankMan.Tank.IsAlive)
-        //    {
-        //        return;
-        //    }
-
-        //    TankMan.Tank.IsFire = true;
-        //    TankMan.Tank.Bullet.IsFlying = true;
-
-        //    if (currentMove == MoveRight)
-        //    {
-        //        MoveBullet(TankMan.Tank.Bullet.MoveRight);
-        //    }
-        //    else if (currentMove == MoveLeft)
-        //    {
-        //        MoveBullet(TankMan.Tank.Bullet.MoveLeft);
-        //    }
-        //    else if (currentMove == MoveUp)
-        //    {
-        //        MoveBullet(TankMan.Tank.Bullet.MoveUp);
-        //    }
-        //    else if (currentMove == MoveDown)
-        //    {
-        //        MoveBullet(TankMan.Tank.Bullet.MoveDown);
-        //    }
-        //}
-
+        /// <returns></returns>
         public Action? GetFireMoving()
         {
             if (TankMan.Tank == null || TankMan.Tank.Bullet == null)
@@ -113,37 +90,6 @@ namespace Client.Controller
 
             return null;
         }
-
-        /// <summary>
-        /// Move the bullet
-        /// </summary>
-        /// <param name="move">Function describing a movement of the bullet</param>
-        //private void MoveBullet(Action move)
-        //{
-        //    if(TankMan.Tank == null || TankMan.Tank.Bullet == null)
-        //    {
-        //        return;
-        //    }
-
-        //    Task.Factory.StartNew(() =>
-        //    {
-        //        while (FieldBounds.Contains(TankMan.Tank.Bullet.Location))
-        //        {
-        //            if (!TankMan.Tank.Bullet.IsFlying)
-        //            {
-        //                break;
-        //            }
-
-        //            move();
-        //            Thread.Sleep(100);
-        //        }
-
-        //        TankMan.Tank.IsFire = false;
-        //        TankMan.Tank.Bullet.IsFlying = false;
-        //        TankMan.Tank.Bullet.Location = TankMan.Tank.Muzzle;
-
-        //    });
-        //}
 
         /// <summary>
         /// Get the next location of the tank
@@ -395,14 +341,5 @@ namespace Client.Controller
 
             return rect;
         }
-
     }
-}
-
-public enum Directions
-{
-    Left, 
-    Right, 
-    Up, 
-    Down
 }

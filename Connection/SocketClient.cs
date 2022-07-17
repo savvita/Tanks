@@ -6,11 +6,6 @@ namespace Connection
     public static class SocketClient
     {
         /// <summary>
-        /// Size of buffer array
-        /// </summary>
-        public static int BufferSize { get; } = 256;
-
-        /// <summary>
         /// Port to connect
         /// </summary>
         public static int Port { get; } = 8008;
@@ -29,11 +24,6 @@ namespace Connection
         /// Stop code
         /// </summary>
         public static string StopCode { get; } = "/stop";
-
-        /// <summary>
-        /// Stop code
-        /// </summary>
-        public static string ErrorCode { get; } = "/error";
 
         /// <summary>
         /// Ok code
@@ -56,11 +46,6 @@ namespace Connection
         public static string RegistrationCode { get; } = "/register";
 
         /// <summary>
-        /// Setting result code
-        /// </summary>
-        public static string ResultCode { get; } = "/result";
-
-        /// <summary>
         /// Code to set the winner
         /// </summary>
         public static string WinCode { get; } = "/win";
@@ -79,6 +64,11 @@ namespace Connection
         /// Code to join the game
         /// </summary>
         public static string StartCode { get; } = "/start";
+
+        /// <summary>
+        /// Code to leave the battle
+        /// </summary>
+        public static string LeaveCode { get; } = "/leave";
 
         /// <summary>
         /// Send a message to the stream
@@ -104,8 +94,13 @@ namespace Connection
         /// </summary>
         /// <param name="stream">Network stream</param>
         /// <returns>Received message</returns>
-        public static string ReceiveMessage(NetworkStream stream)
+        public static string ReceiveMessage(NetworkStream? stream)
         {
+            if(stream == null)
+            {
+                throw new NullReferenceException("Stream cannot be null");
+            }
+
             string msg;
 
             BinaryReader reader = new BinaryReader(stream);

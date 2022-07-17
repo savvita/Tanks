@@ -7,22 +7,25 @@ namespace Client.View
     public partial class GameForm : Form
     {
         #region Graphics
-        private Bitmap bufferedImage;
-        private Bitmap tankImage;
-        private Bitmap deadTankImage;
-        private Bitmap bangImage;
-        private Bitmap backImage;
-        private Graphics graphics;
+        private readonly Bitmap bufferedImage;
+        private readonly Bitmap tankImage;
+        private readonly Bitmap deadTankImage;
+        private readonly Bitmap bangImage;
+        private readonly Bitmap backImage;
+        private readonly Graphics graphics;
         #endregion
 
-        private FieldController? controller;
+        private readonly FieldController? controller;
 
-        private SynchronizationContext? context;
+        private readonly SynchronizationContext? context;
+
+        private readonly CancellationToken token;
+        private readonly CancellationTokenSource source;
 
         private int[] fireCount = new int[5];
         private int[] bangCount = new int[5];
 
-        private Font font = new Font("Segoe UI", 14);
+        private readonly Font font = new Font("Segoe UI", 14);
 
         public GameForm()
         {
@@ -47,6 +50,9 @@ namespace Client.View
             this.bangImage.MakeTransparent();
 
             this.backImage = new Bitmap(Properties.Resources.Field);
+
+            source = new CancellationTokenSource();
+            token = source.Token;
         }
 
         public GameForm(ClientModel? client) : this()
@@ -56,25 +62,29 @@ namespace Client.View
                 return;
             }
 
+            this.Text = client.Name;
+
             context = SynchronizationContext.Current;
 
             controller = new FieldController(new Rectangle(0, 0, this.Width - 10, this.Height - 40), client);
             controller.Win += Controller_Win;
             controller.Lost += Controller_Lost;
-            controller.Connect();
+            controller.ConnectToBattle();
 
-            Thread thread = new Thread(Drawing)
-            {
-                IsBackground = true
-            };
-
-            thread.Start();
+            Task task = new Task(Drawing, token);
+            task.Start();
         }
+
 
         private void Drawing()
         {
             while (true)
             {
+                if(token.IsCancellationRequested)
+                {
+                    break;
+                }
+
                 if(controller == null || controller.TankMen == null)
                 {
                     continue;
@@ -220,12 +230,6 @@ namespace Client.View
             }
         }
 
-        private void GameForm_FormClosing(object sender, FormClosingEventArgs e)
-        {
-            controller?.Close();
-            Owner.Show();
-        }
-
         private void Controller_Lost()
         {
             context?.Send(SetLost, null);
@@ -240,20 +244,19 @@ namespace Client.View
         {
             resultLabel.Text = "You win!";
             resultLabel.Visible = true;
-            backButton.Visible = true;
         }
 
         private void SetLost(object? obj)
         {
             resultLabel.Text = "You lost (((";
             resultLabel.Visible = true;
-            backButton.Visible = true;
         }
 
-        private void backButton_Click(object sender, EventArgs e)
+        private void GameForm_FormClosing(object sender, FormClosedEventArgs e)
         {
-            Owner.Show();
-            this.Close();
+            source.Cancel();
+            controller?.LeaveBattle();
+            Application.Exit();
         }
     }
 }

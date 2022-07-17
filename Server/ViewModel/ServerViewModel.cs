@@ -1,49 +1,55 @@
 ﻿using Server.Model;
-using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Server.ViewModel
 {
-    public class SessioInfo
-    {
-        public SessionModel Session { get; set; }
-        public int Count { get => Session.Clients.Count; }
-    }
     public class ServerViewModel : INotifyPropertyChanged
     {
-        public ServerModel Server { get; } = new ServerModel();
+        private ServerModel server;
 
+        /// <summary>
+        /// Registered users
+        /// </summary>
         public List<UserModel>? Users
         {
-            get => Server.GetAllUsers();
+            get => server.GetAllUsers();
         }
 
-        public List<SessioInfo>? Sessions
+        /// <summary>
+        /// Sessions at the server
+        /// </summary>
+        public List<SessionInfo>? Sessions
         {
-            get => Server.GetAllSessions().Select(x => new SessioInfo() { Session = x}).ToList();
+            get
+            {
+                List<SessionModel>? sessions = server.GetAllSessions();
+                if (sessions != null)
+                {
+                    return sessions.Select(x => new SessionInfo() { Session = x }).ToList();
+                }
+
+                return null;
+            }
         }
-
-
 
         public ServerViewModel()
         {
-            Task.Factory.StartNew(Server.Listen);
+            server = new ServerModel();
+            Task.Factory.StartNew(server.Listen);
 
-            Server.UsersChanged += () => { OnPropertyChanged(nameof(Users)); };
-            Server.SessionsChanged += () => { OnPropertyChanged(nameof(Sessions)); };
+            server.UsersChanged += () => { OnPropertyChanged(nameof(Users)); };
+            server.SessionsChanged += () => { OnPropertyChanged(nameof(Sessions)); };
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
         public void Disconnect()
         {
-            Server.Close();
+            server.Close();
         }
 
         private void OnPropertyChanged([CallerMemberName] string name = "")

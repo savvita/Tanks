@@ -4,6 +4,9 @@ namespace Client.Controller
 {
     public class AuthorizationController
     {
+        /// <summary>
+        /// Model of the client to control
+        /// </summary>
         public ClientModel? Client { get; } = new ClientModel();
 
 

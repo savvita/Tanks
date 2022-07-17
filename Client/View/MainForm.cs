@@ -40,7 +40,7 @@ namespace Client.View
             wonGames.Text += client.WonGames.ToString();
 
             double rate = Math.Round((double)client.WonGames / client.TotalGames * 100, 2);
-            winRateLabel.Text += $"{rate.ToString()}%";
+            winRateLabel.Text += $"{rate}%";
         }
 
         private void shopButton_Click(object sender, EventArgs e)
@@ -56,8 +56,8 @@ namespace Client.View
         {
             if (client != null)
             {
-                GameForm shop = new GameForm(client);
-                shop.Show(this);
+                GameForm form = new GameForm(client);
+                form.Show(this);
                 this.Hide();
             }
         }

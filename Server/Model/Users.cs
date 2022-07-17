@@ -15,6 +15,10 @@ namespace Server.Model
             LoadUsers();
         }
 
+        /// <summary>
+        /// Get list of all the users. Passwords do not return
+        /// </summary>
+        /// <returns>List of registered users</returns>
         public List<UserModel>? GetAllUsers()
         {
             if(users == null)
@@ -76,23 +80,6 @@ namespace Server.Model
             catch { }
         }
 
-
-        /// <summary>
-        /// Check if the user is registered
-        /// </summary>
-        /// <param name="login">Login</param>
-        /// <param name="password">Password</param>
-        /// <returns>True if the user is registered otherwise false</returns>
-        public bool IsUserRegistered(string login, string password)
-        {
-            if (users == null)
-            {
-                return false;
-            }
-
-            return users.Any(x => x.Login == login && x.Password == password);
-        }
-
         /// <summary>
         /// Register a new user
         /// </summary>
@@ -150,36 +137,10 @@ namespace Server.Model
         }
 
         /// <summary>
-        /// Increase a total count of games when user starts a new game
+        /// Get total played games
         /// </summary>
         /// <param name="name">Name of the user</param>
-        public void SetTotalGames(string? name)
-        {
-            UserModel? user = GetUserByName(name);
-
-            if (user != null)
-            {
-                user.TotalGames++;
-            }
-        }
-
-        /// <summary>
-        /// Get coins of the user
-        /// </summary>
-        /// <param name="name">Name of the user</param>
-        /// <returns>Coins</returns>
-        public int GetCoins(string? name)
-        {
-            UserModel? user = GetUserByName(name);
-
-            if (user != null)
-            {
-                return user.Coins;
-            }
-
-            return 0;
-        }
-
+        /// <returns>Count of played games</returns>
         public int GetTotalGames(string? name)
         {
             UserModel? user = GetUserByName(name);
@@ -192,6 +153,11 @@ namespace Server.Model
             return 0;
         }
 
+        /// <summary>
+        /// Get total won games
+        /// </summary>
+        /// <param name="name">Name of the user</param>
+        /// <returns>Count of won games</returns>
         public int GetWonGames(string? name)
         {
             UserModel? user = GetUserByName(name);

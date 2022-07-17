@@ -3,7 +3,7 @@
     public class BattlefieldModel
     {
         /// <summary>
-        /// Tanks ont the field
+        /// Tanks at the field
         /// </summary>
         public List<TankManModel> Tankmen { get; set; } = new List<TankManModel>();
 
@@ -32,18 +32,17 @@
             Won?.Invoke(model);
         }
 
-        public bool IsGameStarted { get; set; } = false;
+        public bool IsInPlay { get; set; } = false;
 
         /// <summary>
         /// Evaluate damages
         /// </summary>
         public void HandleBattle()
         {
-            if (!IsGameStarted)
+            if (!IsInPlay)
             {
                 return;
             }
-
 
             for (int i = 0; i < Tankmen.Count; i++)
             {
@@ -104,29 +103,18 @@
                     if (idx != -1)
                     {
                         OnWon(Tankmen[idx]);
-                        break;
                     }
                     IsFinished = true;
-                    IsGameStarted = false;
+                    IsInPlay = false;
+                    break;
                 }
             }
         }
 
-        public void RemoveTankMan(string? name)
-        {
-            TankManModel? tankMan = Tankmen.Where(x => x.Name != null && x.Name.Equals(name)).FirstOrDefault();
-
-            if(tankMan != null)
-            {
-                Tankmen.Remove(tankMan);
-            }
-        }
-
-
         /// <summary>
         /// Find last alive
         /// </summary>
-        /// <returns></returns>
+        /// <returns>Index of winner if it is founded otherwise -1</returns>
         private int FindWinner()
         {
             for (int i = 0; i < Tankmen.Count; i++)

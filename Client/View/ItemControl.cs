@@ -1,22 +1,26 @@
-﻿using Client.Model;
+﻿using Client.Controller;
+using Client.Model;
 
 namespace Client.View
 {
     public partial class ItemControl : UserControl
     {
-        public int Cost { get; private set; }
+        /// <summary>
+        /// Cost of the item
+        /// </summary>
+        public int Cost { get; private set; }    
 
-        public event Action<ItemControl>? ButtonClicked;
-
+        /// <summary>
+        /// Type of the item
+        /// </summary>
         public ItemTypes Type { get; }
 
+        /// <summary>
+        /// Value of the item
+        /// </summary>
         public int Value { get; }
 
-        public void SetCost(int cost)
-        {
-            Cost = cost;
-            this.costValue.Text = cost.ToString();
-        }
+        public event Action<ItemControl>? ButtonClicked;
 
         #region Constructors
         public ItemControl()
@@ -52,8 +56,7 @@ namespace Client.View
 
         private void Button_Clicked(object sender, EventArgs e)
         {
-            if (ButtonClicked != null)
-                ButtonClicked(this);
+            ButtonClicked?.Invoke(this);
         }
 
         public void EnableButton() => this.buyButton.Enabled = true;

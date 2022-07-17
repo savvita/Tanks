@@ -28,26 +28,8 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.backButton = new System.Windows.Forms.Button();
             this.resultLabel = new System.Windows.Forms.Label();
             this.SuspendLayout();
-            // 
-            // backButton
-            // 
-            this.backButton.BackColor = System.Drawing.Color.DarkSlateGray;
-            this.backButton.FlatAppearance.BorderColor = System.Drawing.Color.Black;
-            this.backButton.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Black;
-            this.backButton.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black;
-            this.backButton.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-            this.backButton.ForeColor = System.Drawing.Color.White;
-            this.backButton.Location = new System.Drawing.Point(371, 323);
-            this.backButton.Name = "backButton";
-            this.backButton.Size = new System.Drawing.Size(191, 51);
-            this.backButton.TabIndex = 3;
-            this.backButton.Text = "Back";
-            this.backButton.UseVisualStyleBackColor = false;
-            this.backButton.Visible = false;
-            this.backButton.Click += new System.EventHandler(this.backButton_Click);
             // 
             // resultLabel
             // 
@@ -68,12 +50,11 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.White;
             this.ClientSize = new System.Drawing.Size(946, 595);
-            this.Controls.Add(this.backButton);
             this.Controls.Add(this.resultLabel);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.Name = "GameForm";
             this.Text = "Game";
-            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.GameForm_FormClosing);
+            this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.GameForm_FormClosing);
             this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.GameForm_KeyDown);
             this.ResumeLayout(false);
 
@@ -81,6 +62,5 @@
 
         #endregion
         private Label resultLabel;
-        private Button backButton;
     }
 }

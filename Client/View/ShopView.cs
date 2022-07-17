@@ -106,6 +106,7 @@ namespace Client.View
             coinsToUse -= control.Cost;
             health = 0;
             damage = 0;
+
             RefreshControls();
             RefreshValues();
         }
@@ -121,23 +122,14 @@ namespace Client.View
             });
         }
 
-
         private void RefreshValues()
         {
             if (controller != null)
             {
-                this.coinsLabel.Text = $"Coins: {controller.Coins.ToString()}";
-                this.healthLabel.Text = $"Health: {controller.Health.ToString()}";
-                this.damageLabel.Text = $"Damage: {controller.Damage.ToString()}";
+                this.coinsLabel.Text = $"Coins: {controller.Coins}";
+                this.healthLabel.Text = $"Health: {controller.Health}";
+                this.damageLabel.Text = $"Damage: {controller.Damage}";
             }
-        }
-
-        public event Action<ItemTypes>? ButtonClicked;
-
-        protected void OnButtonClicked(ItemTypes type)
-        {
-            if (ButtonClicked != null)
-                ButtonClicked(type);
         }
 
         private void closeButton_Click(object sender, EventArgs e)

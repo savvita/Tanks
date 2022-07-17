@@ -1,27 +1,34 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Client.Controller;
 
 namespace Client.Model
 {
     public class ItemModel
     {
-        public string Title { get; set; }
+        /// <summary>
+        /// Title of the article
+        /// </summary>
+        public string? Title { get; set; }
 
+        /// <summary>
+        /// Cost of the article
+        /// </summary>
         public int Cost { get; set; }
 
+        /// <summary>
+        /// Type of the article
+        /// </summary>
         public ItemTypes Type { get; set; }
 
-        public Image Image { get; set; }
+        /// <summary>
+        /// Image of the article
+        /// </summary>
+        public Image? Image { get; set; }
 
+        /// <summary>
+        /// Value of the article
+        /// </summary>
         public int Value { get; set; }
     }
 
-    public enum ItemTypes
-    {
-        Armor,
-        Weapon
-    }
+
 }
