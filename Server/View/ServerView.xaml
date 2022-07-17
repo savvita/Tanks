@@ -5,9 +5,82 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Server.View"
         mc:Ignorable="d"
-        Title="ServerView" Height="450" Width="800" Closing="Window_Closing">
-        
+        Title="Server" Height="450" Width="800" Closing="Window_Closing"
+        Background="#FF02293C" WindowStartupLocation="CenterScreen">
+
+    <Window.Resources>
+        <ResourceDictionary Source="StyleDictionary.xaml" />
+    </Window.Resources>
+
     <Grid>
-        <ListBox ItemsSource="{Binding Server.Sessions}"></ListBox>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition />
+            <ColumnDefinition />
+        </Grid.ColumnDefinitions>
+
+        <Grid Grid.Column="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            
+            <Label Grid.Row="0" Style="{StaticResource LabelStyle}" Content="Sessions" />
+            <DataGrid
+                Grid.Row="1"
+                AutoGenerateColumns="False" 
+                IsReadOnly="True"
+                ItemsSource="{Binding Sessions, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}">
+        
+
+                <DataGrid.Columns>
+                    <DataGridTextColumn 
+                            Header="Session ID"
+                            Width="2*" 
+                            Binding="{Binding Path=Session.ID,UpdateSourceTrigger=PropertyChanged}" />
+
+                    <DataGridTextColumn 
+                            Header="Players"
+                            Width="*"
+                            Binding="{Binding Path=Count,UpdateSourceTrigger=PropertyChanged}" />
+
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+
+        <Grid Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            
+            <Label Grid.Row="0" Style="{StaticResource LabelStyle}" Content="Regitered users" />
+
+            <DataGrid
+                Grid.Row="1"
+                AutoGenerateColumns="False" 
+                IsReadOnly="True"
+                ItemsSource="{Binding Users, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                ScrollViewer.CanContentScroll="True" 
+                ScrollViewer.VerticalScrollBarVisibility="Auto">
+
+                    <DataGrid.Columns>
+                        <DataGridTextColumn 
+                            Header="Name"
+                            Width="2*" 
+                            Binding="{Binding Path=Login,UpdateSourceTrigger=PropertyChanged}" />
+
+                        <DataGridTextColumn 
+                            Header="Total games"
+                            Width="*"
+                            Binding="{Binding Path=TotalGames,UpdateSourceTrigger=PropertyChanged}" />
+
+                        <DataGridTextColumn 
+                            Header="Won games"
+                            Width="*"
+                            Binding="{Binding Path=TotalWins,UpdateSourceTrigger=PropertyChanged}" />
+
+                    </DataGrid.Columns>
+                </DataGrid>
+        </Grid>
     </Grid>
 </Window>

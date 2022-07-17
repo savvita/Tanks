@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
@@ -13,6 +14,30 @@ namespace Server.Model
         {
             LoadUsers();
         }
+
+        public List<UserModel>? GetAllUsers()
+        {
+            if(users == null)
+            {
+                return null;
+            }
+
+            return users.Select(x => new UserModel()
+            {
+                Login = x.Login, 
+                Coins = x.Coins, 
+                TotalGames = x.TotalGames, 
+                TotalWins = x.TotalWins
+            }).ToList();
+        }
+
+        public event Action? UserAdded;
+
+        private void OnUserAdded()
+        {
+            UserAdded?.Invoke();
+        }
+
 
         /// <summary>
         /// Load the list of the users
@@ -104,6 +129,7 @@ namespace Server.Model
             };
 
             users?.Add(model);
+            OnUserAdded();
 
             return model;
         }

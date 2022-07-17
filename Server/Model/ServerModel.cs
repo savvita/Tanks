@@ -17,8 +17,9 @@ namespace Server.Model
     public class ServerModel : INotifyPropertyChanged
     {
         private TcpListener? listener;
-        private Users users = new Users();
-        //private BattlefieldModel battlefield;
+        private Users users { get; } = new Users();
+
+        public event Action? UsersChanged;
 
         /// <summary>
         /// List of clients connected to the server
@@ -34,16 +35,16 @@ namespace Server.Model
             }
         }
 
-        private ObservableCollection<SessionModel>? sessions;
-        public ObservableCollection<SessionModel>? Sessions
-        {
-            get => sessions;
-            private set
-            {
-                sessions = value;
-                OnPropertyChanged(nameof(Sessions));
-            }
-        }
+        private List<SessionModel>? sessions;
+        //public ObservableCollection<SessionModel>? Sessions
+        //{
+        //    get => sessions;
+        //    private set
+        //    {
+        //        sessions = value;
+        //        OnPropertyChanged(nameof(Sessions));
+        //    }
+        //}
 
         #region Events
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -72,7 +73,9 @@ namespace Server.Model
         public ServerModel()
         {
             Clients = new ObservableCollection<ClientModel>();
-            Sessions = new ObservableCollection<SessionModel>();
+            sessions = new List<SessionModel>();
+
+            users.UserAdded += () => { UsersChanged?.Invoke(); };
 
             AddNewSession();
         }
@@ -84,7 +87,7 @@ namespace Server.Model
             session.Battlefield.Lost += OnLost;
             session.Battlefield.Won += OnWon;
 
-            Sessions?.Add(session);
+            sessions?.Add(session);
         }
 
         /// <summary>
@@ -336,12 +339,12 @@ namespace Server.Model
         /// <param name="tankman">Tankman of the client</param>
         public void JoinBattle(ClientModel client, int width, int height)
         {
-            if(Sessions == null)
+            if(sessions == null)
             {
                 return;
             }
 
-            SessionModel? session = Sessions.LastOrDefault();
+            SessionModel? session = sessions.LastOrDefault();
 
             if (session == null || session.Clients == null)
             {
@@ -351,7 +354,7 @@ namespace Server.Model
             if (session.Clients.Count >= GlobalSettings.MaxPlayers)
             {
                 AddNewSession();
-                session = Sessions.LastOrDefault();
+                session = sessions.LastOrDefault();
             }
 
             //if (session == null || session.Clients.Count >= GlobalSettings.MaxPlayers)
@@ -362,10 +365,12 @@ namespace Server.Model
             session.Clients.Add(client);
             client.Session = session;
 
-
-
             session.JoinBattle(client.Tankman, width, height);
+
+            SessionsChanged?.Invoke();
         }
+
+        public event Action? SessionsChanged;
 
         public void OnGotError(string message)
         {
@@ -410,6 +415,16 @@ namespace Server.Model
         private void OnPropertyChanged([CallerMemberName] string name = "")
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        }
+
+        public List<UserModel>? GetAllUsers()
+        {
+            return users.GetAllUsers();
+        }
+
+        public List<SessionModel>? GetAllSessions()
+        {
+            return sessions;
         }
     }
 }

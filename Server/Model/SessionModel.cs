@@ -16,6 +16,11 @@ namespace Server.Model
 
         public List<ClientModel>? Clients { get; set; }
 
+        public int Count
+        {
+            get => Clients.Count;
+        }
+
         public SessionModel()
         {
             ID = id++;
